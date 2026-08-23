@@ -1,0 +1,33 @@
+:root {
+
+  --color-message-system: rgb(255 199 96);
+  --color-message-assistant: rgb(96 186 255);
+  --color-message-user: rgb(255 96 199);
+  --color-message-tool: rgb(65 111 171);
+  --color-message-function: rgb(65 111 171);
+
+}
+
+body {
+  margin: 0;
+  color: #333333;
+  font-family: 'NanumGothicCoding', sans-serif;
+}
+
+/* Message formatting */
+
+.m-h {
+  display: none;
+}
+
+.m-tac {
+  text-align: center;
+}
+
+.m-tal {
+  text-align: left;
+}
+
+.m-tar {
+  text-align: right;
+}

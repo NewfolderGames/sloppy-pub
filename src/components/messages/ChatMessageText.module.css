@@ -1,0 +1,17 @@
+.block {
+
+}
+
+.blockHeader {
+    display: flex;
+    gap: 4px;
+
+    & > div:first-of-type {
+        flex: 1;
+        font-weight: bold;
+    }
+
+    & > div:last-of-type {
+        color: #EEE;
+    }
+}
