@@ -1,0 +1,68 @@
+.appHeader {
+	grid-area: header;
+	position: sticky;
+	top: 0;
+	padding-top: 16px;
+	padding-bottom: 16px;
+	background-color: #fff;
+	z-index: 10;
+}
+
+.headerNav {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.navButton {
+	padding: 8px 16px;
+	font-family: inherit;
+	font-size: 14px;
+	border: 1px solid #ccc;
+	background-color: #f5f5f5;
+	cursor: pointer;
+	font-weight: 500;
+}
+
+.navButton:hover {
+	background-color: #e5e5e5;
+}
+
+.activeNavButton {
+	background-color: #333;
+	color: #fff;
+	border-color: #333;
+	font-weight: bold;
+}
+
+.activeNavButton:hover {
+	background-color: #222;
+}
+
+.assistantToggle {
+	margin-left: auto;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 16px;
+	font-family: inherit;
+	font-size: 14px;
+	border: 1px solid #2563eb;
+	background-color: #eff6ff;
+	color: #1d4ed8;
+	cursor: pointer;
+	font-weight: 600;
+}
+
+.assistantToggle:hover {
+	background-color: #dbeafe;
+}
+
+.assistantToggleActive {
+	background-color: #2563eb;
+	color: #ffffff;
+}
+
+.assistantToggleActive:hover {
+	background-color: #1d4ed8;
+}

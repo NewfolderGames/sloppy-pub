@@ -1,0 +1,326 @@
+.drawerOverlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: rgba(0, 0, 0, 0.4);
+	z-index: 100;
+	display: flex;
+	justify-content: flex-end;
+}
+
+.drawer {
+	width: 440px;
+	max-width: 90vw;
+	height: 100%;
+	background-color: #fff;
+	box-shadow: -4px 0 16px rgba(0, 0, 0, 0.2);
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+	box-sizing: border-box;
+}
+
+.drawerHeader {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 16px;
+	border-bottom: 2px solid #333;
+	background-color: #f9f9f9;
+	position: sticky;
+	top: 0;
+	z-index: 10;
+}
+
+.drawerTitle {
+	font-size: 16px;
+	font-weight: bold;
+	margin: 0;
+}
+
+.closeButton {
+	background: none;
+	border: 1px solid #ccc;
+	padding: 4px 8px;
+	font-size: 14px;
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.closeButton:hover {
+	background-color: #eee;
+}
+
+.drawerContent {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 16px;
+}
+
+.section {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid #eee;
+}
+
+.sectionHeader {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.sectionTitle {
+	font-size: 14px;
+	font-weight: bold;
+	color: #222;
+	margin: 0;
+}
+
+.metaText {
+	font-size: 13px;
+	color: #444;
+	line-height: 1.4;
+	margin: 0;
+}
+
+.hint {
+	font-size: 12px;
+	color: #777;
+}
+
+.badgeGroup {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.list {
+	margin: 0;
+	padding-left: 18px;
+	font-size: 13px;
+	color: #333;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 8px;
+}
+
+.varCard {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 6px 8px;
+	background-color: #f9f9f9;
+	border: 1px solid #e0e0e0;
+	font-size: 12px;
+}
+
+.varName {
+	font-weight: bold;
+	color: #333;
+}
+
+.varValue {
+	color: #555;
+	word-break: break-all;
+}
+
+.searchInput {
+	padding: 6px 10px;
+	font-family: inherit;
+	font-size: 13px;
+	border: 1px solid #ccc;
+	margin-bottom: 4px;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+.stateTable {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 12px;
+}
+
+.stateTable th,
+.stateTable td {
+	border: 1px solid #ddd;
+	padding: 4px 6px;
+	text-align: left;
+}
+
+.stateTable th {
+	background-color: #f5f5f5;
+	font-weight: bold;
+}
+
+.stateTable tr:nth-child(even) {
+	background-color: #fafafa;
+}
+
+.toggleButton {
+	padding: 6px 12px;
+	font-family: inherit;
+	font-size: 13px;
+	font-weight: bold;
+	border: 1px solid #333;
+	background-color: #fff;
+	color: #333;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.toggleButton:hover {
+	background-color: #f0f0f0;
+}
+
+.collapsibleHeader {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	width: 100%;
+	background: none;
+	border: none;
+	padding: 4px 0;
+	cursor: pointer;
+	text-align: left;
+	font-family: inherit;
+}
+
+.collapsibleHeader:hover {
+	opacity: 0.85;
+}
+
+.collapsibleTitleGroup {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.collapseIcon {
+	font-size: 10px;
+	color: #666;
+	width: 12px;
+	user-select: none;
+}
+
+.collapsibleBadge {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.collapsibleBody {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 4px;
+}
+
+.cardList {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.itemCard {
+	border: 1px solid #e0e0e0;
+	padding: 10px;
+	border-radius: 4px;
+	background-color: #fafafa;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.itemHeader {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 8px;
+}
+
+.itemTitle {
+	font-size: 13px;
+	font-weight: bold;
+	color: #222;
+	margin: 0;
+}
+
+.timestamp {
+	font-size: 11px;
+	color: #888;
+	white-space: nowrap;
+}
+
+.itemSummary {
+	font-size: 13px;
+	color: #333;
+	line-height: 1.4;
+	margin: 0;
+}
+
+.itemDetails {
+	font-size: 12px;
+	color: #555;
+	line-height: 1.4;
+	margin: 0;
+	background-color: #f0f0f0;
+	padding: 6px 8px;
+	border-radius: 3px;
+}
+
+.eventLinks {
+	margin-top: 2px;
+}
+
+.keywordList {
+	font-size: 11px;
+	color: #666;
+}
+
+.keywordList code {
+	background-color: #eee;
+	padding: 1px 4px;
+	border-radius: 2px;
+}
+
+.promptPre {
+	margin: 0;
+	padding: 10px;
+	background-color: #f5f5f5;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	font-family: monospace;
+	font-size: 11px;
+	line-height: 1.4;
+	white-space: pre-wrap;
+	word-break: break-word;
+	max-height: 260px;
+	overflow-y: auto;
+}
+
+.copyButton {
+	background: #fff;
+	border: 1px solid #ccc;
+	padding: 2px 8px;
+	font-size: 11px;
+	font-family: inherit;
+	cursor: pointer;
+	border-radius: 3px;
+}
+
+.copyButton:hover {
+	background-color: #eee;
+}

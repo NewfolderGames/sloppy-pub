@@ -1,0 +1,29 @@
+.tabGroup {
+	display: flex;
+	gap: 8px;
+}
+
+.tabButton {
+	padding: 8px 16px;
+	font-family: inherit;
+	font-size: 13px;
+	border: 1px solid #ccc;
+	background-color: #f5f5f5;
+	color: #333;
+	cursor: pointer;
+}
+
+.tabButton:hover {
+	background-color: #e0e0e0;
+}
+
+.activeTabButton {
+	border-color: #333;
+	background-color: #333;
+	color: #fff;
+	font-weight: bold;
+}
+
+.activeTabButton:hover {
+	background-color: #222;
+}

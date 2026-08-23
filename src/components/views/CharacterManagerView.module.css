@@ -1,0 +1,255 @@
+.container {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 16px;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+.topBar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	border-bottom: 2px solid #ccc;
+	padding-bottom: 12px;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
+.title {
+	font-size: 18px;
+	font-weight: bold;
+	margin: 0;
+}
+
+.mainLayout {
+	display: grid;
+	grid-template-columns: 280px 1fr;
+	gap: 20px;
+	min-height: 600px;
+}
+
+@media (max-width: 768px) {
+	.mainLayout {
+		grid-template-columns: 1fr;
+	}
+}
+
+.sidebar {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	border-right: 1px solid #ddd;
+	padding-right: 16px;
+}
+
+.sidebarHeader {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.sidebarTitle {
+	font-size: 16px;
+	font-weight: bold;
+	margin: 0;
+}
+
+.itemList {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	overflow-y: auto;
+	max-height: calc(100vh - 250px);
+}
+
+.itemCard {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 10px 12px;
+	border: 1px solid #ccc;
+	background-color: #fafafa;
+	cursor: pointer;
+	text-align: left;
+}
+
+.itemCard:hover {
+	background-color: #f0f0f0;
+}
+
+.selectedCard {
+	border-color: #333;
+	background-color: #eaeaea;
+	border-left: 4px solid #333;
+}
+
+.cardTitle {
+	font-weight: bold;
+	font-size: 14px;
+	margin: 0;
+}
+
+.cardSubtitle {
+	font-size: 12px;
+	color: #666;
+	margin: 0;
+}
+
+.cardBadge {
+	display: inline-block;
+	align-self: flex-start;
+	background-color: #ddd;
+	font-size: 11px;
+	padding: 2px 6px;
+	border-radius: 3px;
+	margin-top: 4px;
+}
+
+.contentPanel {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.contentHeader {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
+	border-bottom: 1px solid #ddd;
+	padding-bottom: 12px;
+}
+
+.headerActions {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.button {
+	padding: 8px 14px;
+	font-family: inherit;
+	font-size: 13px;
+	border: 1px solid #ccc;
+	background-color: #eee;
+	cursor: pointer;
+}
+
+.button:hover {
+	background-color: #ddd;
+}
+
+.primaryButton {
+	background-color: #333;
+	color: #fff;
+	border-color: #333;
+	font-weight: bold;
+}
+
+.primaryButton:hover {
+	background-color: #111;
+}
+
+.dangerButton {
+	background-color: #fff0f0;
+	color: #c00;
+	border-color: #f99;
+}
+
+.dangerButton:hover {
+	background-color: #ffe0e0;
+}
+
+.section {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	border: 1px solid #e0e0e0;
+	padding: 14px;
+	background-color: #fff;
+}
+
+.sectionTitle {
+	font-size: 14px;
+	font-weight: bold;
+	margin: 0;
+	color: #222;
+}
+
+.traitItem {
+	display: grid;
+	grid-template-columns: 180px 1fr auto;
+	gap: 8px;
+	align-items: center;
+}
+
+@media (max-width: 600px) {
+	.traitItem {
+		grid-template-columns: 1fr;
+	}
+}
+
+.dialogItem {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 8px;
+	border: 1px solid #eee;
+	background-color: #fafafa;
+}
+
+.input {
+	padding: 6px 8px;
+	font-family: inherit;
+	font-size: 13px;
+	border: 1px solid #ccc;
+	border-radius: 2px;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+.textarea {
+	padding: 6px 8px;
+	font-family: inherit;
+	font-size: 13px;
+	border: 1px solid #ccc;
+	border-radius: 2px;
+	box-sizing: border-box;
+	width: 100%;
+	resize: vertical;
+}
+
+.removeButton {
+	padding: 4px 8px;
+	font-family: inherit;
+	font-size: 12px;
+	color: #999;
+	background: none;
+	border: 1px solid #ddd;
+	cursor: pointer;
+	border-radius: 2px;
+}
+
+.removeButton:hover {
+	color: #c00;
+	border-color: #c00;
+}
+
+.addButton {
+	align-self: flex-start;
+	padding: 6px 12px;
+	font-family: inherit;
+	font-size: 12px;
+	background-color: #f5f5f5;
+	border: 1px dashed #bbb;
+	cursor: pointer;
+	border-radius: 2px;
+}
+
+.addButton:hover {
+	background-color: #ebebeb;
+	border-color: #999;
+}

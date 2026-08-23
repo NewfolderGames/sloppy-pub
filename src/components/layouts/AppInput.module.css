@@ -10,31 +10,13 @@
     border-right-width: 8px;
     border-right-style: solid;
     border-right-color: transparent;
-
-    &[data-role="system"] {
-        border-left-color: var(--color-message-system);
-        border-right-color: var(--color-message-system);
-    }
-    &[data-role="assistant"] {
-        border-left-color: var(--color-message-assistant);
-    }
-    &[data-role="user"] {
-        border-right-color: var(--color-message-user);
-    }
-    &[data-role="tool"] {
-        border-left-color: var(--color-message-tool);
-    }
-    &[data-role="function"] {
-        border-left-color: var(--color-message-function);
-    }
-
 }
 
 .inputContainer {
     & > textarea {
         display: block;
         resize: vertical;
-        border: none;
+        border: 1px solid #ccc;
         box-sizing: border-box;
         width: 100%;
         padding: 16px;
@@ -45,31 +27,21 @@
 
 .actionContainer {
     display: flex;
+    justify-content: space-between;
+    gap: 4px;
+}
+
+.controls {
+    display: flex;
     gap: 4px;
 
-    & > div:first-of-type {
-        flex: 1;
-    }
-
-    & > div > select {
-        padding: 4px 8px;
+    & > button {
+        padding: 4px 12px;
         min-width: 32px;
         height: 32px;
-        border: none;
         border-radius: 0;
-    }
-
-
-    & > div:nth-of-type(3) {
-        display: flex;
-        gap: 4px;
-
-        & > button {
-            padding: 4px;
-            min-width: 32px;
-            height: 32px;
-            border: none;
-            border-radius: 0;
-        }
+        border: 1px solid #ccc;
+        font-family: inherit;
+        cursor: pointer;
     }
 }

@@ -1,0 +1,64 @@
+.container {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+}
+
+.chatHeader {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 10px 14px;
+	background-color: #f8f9fa;
+	border: 1px solid #e9ecef;
+	margin-bottom: 12px;
+	border-radius: 4px;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.sessionInfo {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.sessionTitle {
+	font-size: 14px;
+	font-weight: bold;
+	color: #212529;
+}
+
+.sessionMeta {
+	font-size: 12px;
+	color: #6c757d;
+}
+
+.infoButton {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	font-family: inherit;
+	font-size: 12px;
+	font-weight: bold;
+	background-color: #fff;
+	border: 1px solid #ced4da;
+	border-radius: 4px;
+	color: #495057;
+	cursor: pointer;
+}
+
+.infoButton:hover {
+	background-color: #e9ecef;
+	border-color: #adb5bd;
+}
+
+.stateCountBadge {
+	display: inline-block;
+	padding: 1px 6px;
+	font-size: 11px;
+	border-radius: 10px;
+	background-color: #212529;
+	color: #fff;
+}

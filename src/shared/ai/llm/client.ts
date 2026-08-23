@@ -1,7 +1,7 @@
 import type { ChatCompletionChunk } from "@/shared/ai/llm/response.ts";
 import type { ChatCompletionRequest } from "@/shared/ai/llm/request.ts";
 import type { SSEEvent } from "@/shared/ai/llm/client_event.ts";
-import type { ChatCompletionMessageParam } from "@/shared/ai/llm/common.ts";
+import type { ChatCompletionAssistantMessageParam, ChatCompletionMessageParam, ChatCompletionMessageToolCall } from "@/shared/ai/llm/common.ts";
 
 export class OpenAIClient {
 
@@ -17,26 +17,81 @@ export class OpenAIClient {
 
 	public static chunksToMessage(chunks: ChatCompletionChunk[]): ChatCompletionMessageParam {
 
-		const message: ChatCompletionMessageParam = {
-			role: chunks[0].choices[0].delta.role! as any,
-			content: "",
-			refusal: chunks.at(-1)!.choices[0].delta.refusal,
-			tool_calls: [],
-		};
+		if (chunks.length === 0) {
+			throw new Error("Cannot construct message from empty chunks array");
+		}
+
+		const role = chunks.find(c => c.choices[0]?.delta?.role)?.choices[0]?.delta?.role ?? "assistant";
+		const lastChoice = chunks.at(-1)!.choices[0];
+
+		const toolCallsMap = new Map<number, ChatCompletionMessageToolCall>();
+		let content = "";
 
 		for (const chunk of chunks) {
 			for (const choice of chunk.choices) {
-				if (choice.delta.content) message.content += choice.delta.content;
-				if (choice.delta.reasoning_content) message.reasoning += choice.delta.reasoning_content;
+				if (choice.delta.content) {
+					content += choice.delta.content;
+				}
+
 				if (choice.delta.tool_calls) {
-					if ("tool_calls" in message.rawData) {
-						message.rawData.tool_calls!.push(choice.delta.tool_calls);
+					const deltas = Array.isArray(choice.delta.tool_calls)
+						? choice.delta.tool_calls
+						: [choice.delta.tool_calls];
+
+					for (let index = 0; index < deltas.length; index++) {
+						const delta = deltas[index];
+						const callIndex = delta.index ?? index;
+
+						if (!toolCallsMap.has(callIndex)) {
+							toolCallsMap.set(callIndex, {
+								id: delta.id ?? "",
+								type: (delta.type as "function") ?? "function",
+								function: {
+									name: delta.function?.name ?? "",
+									arguments: delta.function?.arguments ?? "",
+								},
+							});
+						}
+						else {
+							const existing = toolCallsMap.get(callIndex)!;
+
+							if (delta.id) {
+								existing.id = delta.id;
+							}
+							if (delta.type) {
+								existing.type = delta.type as "function";
+							}
+							if (delta.function?.name) {
+								existing.function.name += delta.function.name;
+							}
+							if (delta.function?.arguments) {
+								existing.function.arguments += delta.function.arguments;
+							}
+						}
 					}
 				}
 			}
 		}
 
-		return message;
+		const sortedToolCalls = toolCallsMap.size > 0
+			? Array.from(toolCallsMap.entries()).sort(([a], [b]) => a - b).map(([, call]) => call)
+			: undefined;
+
+		if (role === "assistant") {
+			const assistantMessage: ChatCompletionAssistantMessageParam = {
+				role: "assistant",
+				content,
+				refusal: lastChoice?.delta?.refusal ?? null,
+				...(sortedToolCalls ? { tool_calls: sortedToolCalls } : {}),
+			};
+
+			return assistantMessage;
+		}
+
+		return {
+			role: role as any,
+			content,
+		};
 
 	}
 

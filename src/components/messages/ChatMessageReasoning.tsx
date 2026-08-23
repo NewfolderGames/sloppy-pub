@@ -1,5 +1,5 @@
 import Markdown from "react-markdown";
-import styles from "./ChatMessageReasonging.module.css";
+import styles from "./ChatMessageReasoning.module.css";
 
 interface Props {
 	content: string;

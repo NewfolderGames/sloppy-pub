@@ -67,3 +67,126 @@
     color: #AAAAAA;
     font-style: italic;
 }
+
+.toolHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: rgb(65 111 171);
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.editContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 6px;
+    margin-bottom: 6px;
+}
+
+.editTextarea {
+    display: block;
+    width: 100%;
+    min-height: 80px;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    background-color: #ffffff;
+    color: #111111;
+    resize: vertical;
+}
+
+@media (prefers-color-scheme: dark) {
+    .editTextarea {
+        background-color: #1e1e1e;
+        color: #e0e0e0;
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+}
+
+.editTextarea:focus-visible {
+    outline: 2px solid var(--color-message-assistant, #60baff);
+    outline-offset: 1px;
+}
+
+.editActions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+}
+
+.saveButton {
+    background-color: #2563eb;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background-color 0.15s ease;
+}
+
+.saveButton:hover:not(:disabled) {
+    background-color: #1d4ed8;
+}
+
+.saveButton:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+.saveButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.cancelButton {
+    background: transparent;
+    color: #555555;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+    .cancelButton {
+        color: #cccccc;
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+}
+
+.cancelButton:hover:not(:disabled) {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #111111;
+}
+
+@media (prefers-color-scheme: dark) {
+    .cancelButton:hover:not(:disabled) {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+    }
+}
+
+.cancelButton:focus-visible {
+    outline: 2px solid var(--color-message-assistant, #60baff);
+    outline-offset: 2px;
+}
+
+.cancelButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

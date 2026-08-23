@@ -12,7 +12,7 @@ export interface ChatCompletionRequest {
 		ttl?: "30m";
 	};
 	reasoning_effort?: "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
-	response_format?: ResponseFormat;
+	response_format?: ResponseFormat | null;
 	safety_identifier?: string | null;
 	stop?: string | string[];
 	stream?: boolean | null;
@@ -22,16 +22,20 @@ export interface ChatCompletionRequest {
 	};
 	temperature?: number | null;
 	tool_choice?: ChatCompletionToolChoiceOption;
-	tools?: (FunctionDefinition | ChatCompletionCustomTool)[];
+	tools?: (ChatCompletionFunctionTool | ChatCompletionCustomTool)[];
 	top_logprobs?: number | null;
 	top_p?: number | null;
 	verbosity?: "low" | "medium" | "high";
 }
 
-export type ResponseFormat = ResponseFormatText | ResponseFormatJSONSchema;
+export type ResponseFormat = ResponseFormatJSONSchema | ResponseFormatText | ResponseFormatJSONObject;
 
 export interface ResponseFormatText {
 	type: "text";
+}
+
+export interface ResponseFormatJSONObject {
+	type: "json_object";
 }
 
 export interface ResponseFormatJSONSchema {

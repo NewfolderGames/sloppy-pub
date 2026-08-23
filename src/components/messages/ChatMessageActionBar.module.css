@@ -1,0 +1,237 @@
+.container {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-top: 8px;
+	padding-top: 6px;
+	border-top: 1px solid rgba(0, 0, 0, 0.06);
+	font-size: 12px;
+	line-height: 1.4;
+}
+
+@media (prefers-color-scheme: dark) {
+	.container {
+		border-top-color: rgba(255, 255, 255, 0.08);
+	}
+}
+
+.errorBanner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 6px 10px;
+	border-radius: 4px;
+	background-color: rgba(239, 68, 68, 0.08);
+	border: 1px solid rgba(239, 68, 68, 0.25);
+	color: #dc2626;
+	font-size: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+	.errorBanner {
+		background-color: rgba(239, 68, 68, 0.18);
+		border-color: rgba(239, 68, 68, 0.35);
+		color: #fca5a5;
+	}
+}
+
+.errorText {
+	flex: 1;
+	word-break: break-word;
+}
+
+.retryButton {
+	background-color: #dc2626;
+	color: #ffffff;
+	border: none;
+	border-radius: 3px;
+	padding: 3px 8px;
+	font-size: 11px;
+	font-weight: 600;
+	cursor: pointer;
+	font-family: inherit;
+	transition: background-color 0.15s ease;
+	flex-shrink: 0;
+}
+
+.retryButton:hover:not(:disabled) {
+	background-color: #b91c1c;
+}
+
+.retryButton:focus-visible {
+	outline: 2px solid #ef4444;
+	outline-offset: 2px;
+}
+
+.retryButton:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.contentRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.metaGroup {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.metricsGroup {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.metricBadge {
+	display: inline-flex;
+	align-items: center;
+	font-size: 11px;
+	padding: 1px 6px;
+	border-radius: 10px;
+	background-color: rgba(0, 0, 0, 0.05);
+	color: #666666;
+	letter-spacing: 0.2px;
+}
+
+@media (prefers-color-scheme: dark) {
+	.metricBadge {
+		background-color: rgba(255, 255, 255, 0.08);
+		color: #aaaaaa;
+	}
+}
+
+.siblingPager {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	background-color: rgba(0, 0, 0, 0.04);
+	border-radius: 12px;
+	padding: 1px 4px;
+}
+
+@media (prefers-color-scheme: dark) {
+	.siblingPager {
+		background-color: rgba(255, 255, 255, 0.08);
+	}
+}
+
+.pagerButton {
+	background: transparent;
+	border: none;
+	padding: 1px 5px;
+	font-size: 11px;
+	cursor: pointer;
+	border-radius: 3px;
+	color: #555555;
+	font-family: inherit;
+	line-height: 1.2;
+}
+
+@media (prefers-color-scheme: dark) {
+	.pagerButton {
+		color: #aaaaaa;
+	}
+}
+
+.pagerButton:hover:not(:disabled) {
+	background-color: rgba(0, 0, 0, 0.08);
+	color: #111111;
+}
+
+@media (prefers-color-scheme: dark) {
+	.pagerButton:hover:not(:disabled) {
+		background-color: rgba(255, 255, 255, 0.15);
+		color: #ffffff;
+	}
+}
+
+.pagerButton:focus-visible {
+	outline: 2px solid #60baff;
+	outline-offset: 1px;
+}
+
+.pagerButton:disabled {
+	opacity: 0.3;
+	cursor: default;
+}
+
+.pagerCount {
+	font-size: 11px;
+	color: #666666;
+	padding: 0 4px;
+	user-select: none;
+}
+
+@media (prefers-color-scheme: dark) {
+	.pagerCount {
+		color: #aaaaaa;
+	}
+}
+
+.actionsGroup {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-left: auto;
+}
+
+.actionButton {
+	background: transparent;
+	border: 1px solid rgba(0, 0, 0, 0.12);
+	border-radius: 4px;
+	padding: 2px 8px;
+	font-size: 11px;
+	font-family: inherit;
+	color: #555555;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	transition: all 0.15s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+	.actionButton {
+		border-color: rgba(255, 255, 255, 0.15);
+		color: #cccccc;
+	}
+}
+
+.actionButton:hover:not(:disabled) {
+	background-color: rgba(0, 0, 0, 0.05);
+	border-color: rgba(0, 0, 0, 0.25);
+	color: #222222;
+}
+
+@media (prefers-color-scheme: dark) {
+	.actionButton:hover:not(:disabled) {
+		background-color: rgba(255, 255, 255, 0.08);
+		border-color: rgba(255, 255, 255, 0.3);
+		color: #ffffff;
+	}
+}
+
+.container[data-role="assistant"] .actionButton:hover:not(:disabled) {
+	border-color: var(--color-message-assistant, rgb(96 186 255));
+}
+
+.container[data-role="user"] .actionButton:hover:not(:disabled) {
+	border-color: var(--color-message-user, rgb(255 96 199));
+}
+
+.actionButton:focus-visible {
+	outline: 2px solid #60baff;
+	outline-offset: 1px;
+}
+
+.actionButton:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}

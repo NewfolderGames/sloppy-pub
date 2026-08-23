@@ -1,0 +1,303 @@
+.container {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 16px;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+.topBar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	border-bottom: 2px solid #ccc;
+	padding-bottom: 12px;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
+.title {
+	font-size: 18px;
+	font-weight: bold;
+	margin: 0;
+}
+
+.mainLayout {
+	display: grid;
+	grid-template-columns: 280px 1fr;
+	gap: 20px;
+	min-height: 600px;
+}
+
+@media (max-width: 768px) {
+	.mainLayout {
+		grid-template-columns: 1fr;
+	}
+}
+
+.sidebar {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	border-right: 1px solid #ddd;
+	padding-right: 16px;
+}
+
+.sidebarHeader {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.sidebarTitle {
+	font-size: 16px;
+	font-weight: bold;
+	margin: 0;
+}
+
+.itemList {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	overflow-y: auto;
+	max-height: calc(100vh - 250px);
+}
+
+.itemCard {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 10px 12px;
+	border: 1px solid #ccc;
+	background-color: #fafafa;
+	cursor: pointer;
+	text-align: left;
+}
+
+.itemCard:hover {
+	background-color: #f0f0f0;
+}
+
+.selectedCard {
+	border-color: #333;
+	background-color: #eaeaea;
+	border-left: 4px solid #333;
+}
+
+.cardTitle {
+	font-weight: bold;
+	font-size: 14px;
+	margin: 0;
+}
+
+.cardSubtitle {
+	font-size: 12px;
+	color: #666;
+	margin: 0;
+}
+
+.cardBadge {
+	display: inline-block;
+	align-self: flex-start;
+	background-color: #ddd;
+	font-size: 11px;
+	padding: 2px 6px;
+	border-radius: 3px;
+	margin-top: 4px;
+}
+
+.contentPanel {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.contentHeader {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
+	border-bottom: 1px solid #ddd;
+	padding-bottom: 12px;
+}
+
+.headerActions {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.button {
+	padding: 8px 14px;
+	font-family: inherit;
+	font-size: 13px;
+	border: 1px solid #ccc;
+	background-color: #eee;
+	cursor: pointer;
+}
+
+.button:hover {
+	background-color: #ddd;
+}
+
+.primaryButton {
+	background-color: #333;
+	color: #fff;
+	border-color: #333;
+	font-weight: bold;
+}
+
+.primaryButton:hover {
+	background-color: #111;
+}
+
+.dangerButton {
+	background-color: #fff0f0;
+	color: #c00;
+	border-color: #f99;
+}
+
+.dangerButton:hover {
+	background-color: #ffe0e0;
+}
+
+.section {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	border: 1px solid #e0e0e0;
+	padding: 14px;
+	background-color: #fff;
+}
+
+.sectionTitle {
+	font-size: 15px;
+	font-weight: bold;
+	margin: 0 0 6px 0;
+	border-bottom: 1px solid #eee;
+	padding-bottom: 6px;
+}
+
+.formGrid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 12px;
+}
+
+.formGroup {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.label {
+	font-size: 13px;
+	font-weight: bold;
+}
+
+.input {
+	box-sizing: border-box;
+	width: 100%;
+	padding: 8px 10px;
+	font-family: inherit;
+	font-size: 13px;
+	border: 1px solid #ccc;
+	background-color: #f9f9f9;
+}
+
+.input:focus {
+	outline: none;
+	border-color: #333;
+	background-color: #fff;
+}
+
+.textarea {
+	box-sizing: border-box;
+	width: 100%;
+	padding: 8px 10px;
+	font-family: inherit;
+	font-size: 13px;
+	border: 1px solid #ccc;
+	background-color: #f9f9f9;
+	resize: vertical;
+	min-height: 90px;
+}
+
+.textarea:focus {
+	outline: none;
+	border-color: #333;
+	background-color: #fff;
+}
+
+.cardList {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.listEditor {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.listRow {
+	display: flex;
+	gap: 8px;
+	align-items: flex-start;
+}
+
+.listRow button {
+	flex-shrink: 0;
+}
+
+.listRow .textarea {
+	min-height: 60px;
+}
+
+.defCard {
+	border: 1px solid #ddd;
+	padding: 10px;
+	background-color: #fdfdfd;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.defCardHeader {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+/* Image Registry Grid */
+
+.imageGrid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+	gap: 16px;
+}
+
+.imageCard {
+	border: 1px solid #ccc;
+	padding: 16px;
+	background-color: #fff;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.promptPreview {
+	background-color: #f4f4f4;
+	border: 1px solid #ddd;
+	padding: 10px;
+	font-size: 12px;
+	max-height: 180px;
+	overflow-y: auto;
+	white-space: pre-wrap;
+	word-break: break-word;
+	font-family: 'NanumGothicCoding', monospace;
+}

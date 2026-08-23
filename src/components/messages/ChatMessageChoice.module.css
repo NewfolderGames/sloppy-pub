@@ -1,0 +1,113 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+.optionsList {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.optionButton {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 8px 12px;
+    background-color: #f7f7f7;
+    border: 1px solid #ccc;
+    border-radius: 0;
+    font-family: inherit;
+    font-size: 14px;
+    color: #222;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+
+    &:hover:not(:disabled) {
+        background-color: #eaeaea;
+        border-color: #999;
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+.checkboxItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background-color: #f7f7f7;
+    border: 1px solid #ddd;
+    cursor: pointer;
+
+    &:hover:not([data-disabled="true"]) {
+        background-color: #eee;
+    }
+
+    &[data-disabled="true"] {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+.checkbox {
+    cursor: pointer;
+
+    &:disabled {
+        cursor: not-allowed;
+    }
+}
+
+.checkboxLabel {
+    flex: 1;
+    font-size: 14px;
+    color: #222;
+    user-select: none;
+}
+
+.customInputContainer {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.customInput {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 0;
+    font-family: inherit;
+    font-size: 14px;
+    background-color: #fff;
+
+    &:disabled {
+        background-color: #eee;
+        cursor: not-allowed;
+    }
+}
+
+.submitButton {
+    padding: 6px 14px;
+    border: 1px solid #ccc;
+    border-radius: 0;
+    background-color: #f0f0f0;
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+
+    &:hover:not(:disabled) {
+        background-color: #e0e0e0;
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}

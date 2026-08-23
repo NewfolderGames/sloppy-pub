@@ -1,45 +1,68 @@
-import { chatRoles } from "@/shared/ai/llm/common.ts";
-import { type SubmitEvent, useState } from "react";
+import { type SubmitEvent } from "react";
 import styles from "./AppInput.module.css";
 
 interface Props {
 	onSubmit: (event: SubmitEvent<HTMLFormElement>) => void;
+	onOpenWorldInfo?: () => void;
 }
 
 function AppInput(props: Readonly<Props>) {
-
-	const [role, setRole] = useState(chatRoles[0]);
-
 	return (
 		<form
 			className={styles.container}
 			onSubmit={props.onSubmit}
-			data-role={role}
 		>
 			<div className={styles.inputContainer}>
-				<textarea name="content" rows={4} />
+				<textarea
+					name="content"
+					rows={4}
+					placeholder="Type a message..."
+					aria-label="Message content"
+				/>
 			</div>
 			<div className={styles.actionContainer}>
-				<div>
-
+				<div className={styles.controls}>
+					<button
+						type="button"
+						onClick={props.onOpenWorldInfo}
+						title="Open World Info"
+						aria-label="Open World Info"
+					>
+						World Info
+					</button>
 				</div>
-				<div>
-
-				</div>
-				<div>
-					<select name="role" value={role} onChange={e => setRole(e.target.value as any)}>
-						<option value={chatRoles[0]}>{chatRoles[0]}</option>
-						<option value={chatRoles[1]}>{chatRoles[1]}</option>
-						{/*<option value={chatRoles[2]}>{chatRoles[2]}</option>*/}
-					</select>
-					<button type="submit" name="sendType" value="continue">C</button>
-					<button type="submit" name="sendType" value="attach">A</button>
-					<button type="submit" name="sendType" value="request">S</button>
+				<div className={styles.controls}>
+					<button
+						type="submit"
+						name="sendType"
+						value="continue"
+						title="Continue next turn"
+						aria-label="Continue next turn"
+					>
+						Continue
+					</button>
+					<button
+						type="submit"
+						name="sendType"
+						value="attach"
+						title="Attach message"
+						aria-label="Attach message"
+					>
+						Attach
+					</button>
+					<button
+						type="submit"
+						name="sendType"
+						value="request"
+						title="Send message"
+						aria-label="Send message"
+					>
+						Send
+					</button>
 				</div>
 			</div>
 		</form>
 	);
-
 }
 
 export default AppInput;

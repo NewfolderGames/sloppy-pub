@@ -1,0 +1,67 @@
+.section {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 16px;
+	border: 1px solid #ddd;
+	background-color: #fff;
+}
+
+.sectionTitle {
+	font-size: 15px;
+	font-weight: bold;
+	margin: 0;
+	padding-bottom: 8px;
+	border-bottom: 1px solid #eee;
+}
+
+.formGrid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 12px;
+}
+
+.formGroup {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.label {
+	font-size: 13px;
+	font-weight: bold;
+}
+
+.input {
+	box-sizing: border-box;
+	width: 100%;
+	padding: 8px 10px;
+	font-family: inherit;
+	font-size: 13px;
+	border: 1px solid #ccc;
+	background-color: #f9f9f9;
+}
+
+.input:focus {
+	outline: none;
+	border-color: #333;
+	background-color: #fff;
+}
+
+.textarea {
+	box-sizing: border-box;
+	width: 100%;
+	padding: 8px 10px;
+	font-family: inherit;
+	font-size: 13px;
+	border: 1px solid #ccc;
+	background-color: #f9f9f9;
+	resize: vertical;
+	min-height: 80px;
+}
+
+.textarea:focus {
+	outline: none;
+	border-color: #333;
+	background-color: #fff;
+}

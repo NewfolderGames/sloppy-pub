@@ -1,39 +1,72 @@
 .app {
-    display: grid;
-    grid-template-areas:
-            "leftside header rightside"
-            "leftside chat rightside"
-            "leftside input rightside";
-    grid-template-columns: 1fr minmax(300px, 900px) 1fr;
-    grid-template-rows: auto 1fr auto;
-    min-height: 100dvh;
-    gap: 16px;
+	display: grid;
+	grid-template-areas:
+		"leftside header rightside"
+		"leftside chat rightside"
+		"leftside input rightside";
+	grid-template-columns: minmax(16px, 1fr) minmax(300px, 1280px) minmax(16px, 1fr);
+	grid-template-rows: auto 1fr auto;
+	min-height: 100dvh;
+	column-gap: 16px;
 }
 
 .appLeft {
-    grid-area: leftside;
+	grid-area: leftside;
 }
 
 .appRight {
-    grid-area: rightside;
+	grid-area: rightside;
+	display: flex;
+	justify-content: flex-start;
 }
 
-.appHeader {
-    padding-top: 16px;
-    grid-area: header;
-    position: sticky;
-    top: 0;
+.appView {
+	grid-area: chat;
 }
 
-.appChat {
-    grid-area: chat;
+.app:not([data-active-tab="chat"]) [data-tab="chat"] {
+	display: none;
+}
+
+.app:not([data-active-tab="world-manager"]) [data-tab="world-manager"] {
+	display: none;
+}
+
+.app:not([data-active-tab="universe-manager"]) [data-tab="universe-manager"] {
+	display: none;
+}
+
+.app:not([data-active-tab="character-manager"]) [data-tab="character-manager"] {
+	display: none;
+}
+
+.app:not([data-active-tab="lore"]) [data-tab="lore"] {
+	display: none;
+}
+
+.app:not([data-active-tab="instances"]) [data-tab="instances"] {
+	display: none;
+}
+
+.app:not([data-active-tab="settings"]) [data-tab="settings"] {
+	display: none;
 }
 
 .appInput {
-    padding-top: 16px;
-    grid-area: input;
-    position: sticky;
-    bottom: 0;
-    padding-bottom: 16px;
-    background-color: #fff;
+	grid-area: input;
+	position: sticky;
+	bottom: 0;
+	padding-top: 16px;
+	padding-bottom: 16px;
+	background-color: #fff;
+	z-index: 10;
+}
+
+.app:not([data-active-tab="chat"]) .appInput {
+	display: none;
+}
+
+.appAssistant {
+	position: fixed;
+	right: 0;
 }

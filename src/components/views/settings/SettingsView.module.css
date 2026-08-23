@@ -1,0 +1,92 @@
+.container {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 16px;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+.topBar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	border-bottom: 2px solid #ccc;
+	padding-bottom: 12px;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
+.title {
+	font-size: 18px;
+	font-weight: bold;
+	margin: 0;
+}
+
+.mainLayout {
+	display: grid;
+	grid-template-columns: 220px 1fr;
+	gap: 20px;
+	min-height: 600px;
+}
+
+@media (max-width: 768px) {
+	.mainLayout {
+		grid-template-columns: 1fr;
+	}
+}
+
+.sidebar {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	border-right: 1px solid #ddd;
+	padding-right: 16px;
+}
+
+.sidebarTitle {
+	font-size: 13px;
+	font-weight: bold;
+	color: #666;
+	margin: 0 0 4px 0;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.menuList {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.menuButton {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 10px 12px;
+	font-family: inherit;
+	font-size: 13px;
+	font-weight: bold;
+	border: 1px solid #ddd;
+	background-color: #fafafa;
+	cursor: pointer;
+	text-align: left;
+	transition: background-color 0.15s ease;
+}
+
+.menuButton:hover {
+	background-color: #f0f0f0;
+}
+
+.activeMenuButton {
+	border-color: #333;
+	background-color: #eaeaea;
+	border-left: 4px solid #333;
+}
+
+.contentPanel {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	min-width: 0;
+}

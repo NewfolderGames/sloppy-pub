@@ -23,3 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 *.iml
+
+.junie
+scripts
+.output.txt

@@ -1,0 +1,282 @@
+.container {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 16px;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+.topBar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	border-bottom: 2px solid #ccc;
+	padding-bottom: 12px;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
+.mainLayout {
+	display: grid;
+	grid-template-columns: 320px 1fr;
+	gap: 20px;
+	min-height: 600px;
+}
+
+@media (max-width: 860px) {
+	.mainLayout {
+		grid-template-columns: 1fr;
+	}
+}
+
+.sidebar {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	border-right: 1px solid #ddd;
+	padding-right: 16px;
+}
+
+.sidebarHeader {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.sidebarTitle {
+	font-size: 16px;
+	font-weight: bold;
+	margin: 0;
+}
+
+.itemList {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	overflow-y: auto;
+	max-height: calc(100vh - 250px);
+}
+
+.itemCard {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 10px 12px;
+	border: 1px solid #ccc;
+	background-color: #fafafa;
+	cursor: pointer;
+	text-align: left;
+}
+
+.itemCard:hover {
+	background-color: #f0f0f0;
+}
+
+.selectedCard {
+	border-color: #333;
+	background-color: #eaeaea;
+	border-left: 4px solid #333;
+}
+
+.cardTitle {
+	font-size: 14px;
+	font-weight: bold;
+	color: #222;
+}
+
+.cardSubtitle {
+	font-size: 12px;
+	color: #666;
+}
+
+.badgeGroup {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin-top: 4px;
+}
+
+.contentArea {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	overflow-y: auto;
+}
+
+.card {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 16px;
+	border: 1px solid #ddd;
+	background-color: #fff;
+}
+
+.sectionTitle {
+	font-size: 16px;
+	font-weight: bold;
+	margin: 0;
+	padding-bottom: 6px;
+	border-bottom: 1px solid #eee;
+}
+
+.formGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 12px;
+}
+
+@media (max-width: 600px) {
+	.formGrid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.formGroup {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.fullWidth {
+	grid-column: 1 / -1;
+}
+
+.label {
+	font-size: 13px;
+	font-weight: bold;
+	color: #333;
+}
+
+.hint {
+	font-size: 12px;
+	color: #777;
+}
+
+.input,
+.select,
+.textarea {
+	padding: 8px 10px;
+	font-family: inherit;
+	font-size: 13px;
+	border: 1px solid #ccc;
+	background-color: #fff;
+	box-sizing: border-box;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+	outline: none;
+	border-color: #333;
+}
+
+.textarea {
+	min-height: 80px;
+	resize: vertical;
+}
+
+.checkboxLabel {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.radioGroup {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 4px;
+}
+
+.radioOption {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.actions {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin-top: 8px;
+}
+
+.primaryButton {
+	padding: 8px 16px;
+	font-family: inherit;
+	font-size: 13px;
+	font-weight: bold;
+	border: 1px solid #333;
+	background-color: #333;
+	color: #fff;
+	cursor: pointer;
+}
+
+.primaryButton:hover {
+	background-color: #222;
+}
+
+.secondaryButton {
+	padding: 8px 16px;
+	font-family: inherit;
+	font-size: 13px;
+	border: 1px solid #ccc;
+	background-color: #f5f5f5;
+	color: #333;
+	cursor: pointer;
+}
+
+.secondaryButton:hover {
+	background-color: #e5e5e5;
+}
+
+.dangerButton {
+	padding: 8px 16px;
+	font-family: inherit;
+	font-size: 13px;
+	border: 1px solid #c62828;
+	background-color: #ffebee;
+	color: #c62828;
+	cursor: pointer;
+}
+
+.dangerButton:hover {
+	background-color: #ffcdd2;
+}
+
+.stateTable {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.stateTable th,
+.stateTable td {
+	border: 1px solid #ddd;
+	padding: 6px 10px;
+	text-align: left;
+}
+
+.stateTable th {
+	background-color: #f5f5f5;
+	font-weight: bold;
+}
+
+.stateTable tr:nth-child(even) {
+	background-color: #fafafa;
+}
+
+.varItem {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 10px;
+	background-color: #fdfdfd;
+	border: 1px solid #e0e0e0;
+}

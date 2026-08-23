@@ -30,12 +30,23 @@ export interface CompletionUsage {
 
 // Stream
 
+export interface ChatCompletionChunkToolCallDelta {
+	index?: number;
+	id?: string;
+	type?: "function";
+	function?: {
+		name?: string;
+		arguments?: string;
+	};
+}
+
 export interface ChatCompletionChunk {
 	id: string;
 	choices: ChatCompletionChoiceChunk[];
 	created: number;
 	model: string;
 	object: "chat.completion.chunk";
+	usage?: CompletionUsage;
 }
 
 export interface ChatCompletionChoiceChunk {
@@ -44,8 +55,8 @@ export interface ChatCompletionChoiceChunk {
 		refusal?: string | null;
 		role?: ChatRole;
 		reasoning_content?: string | null;
-		tool_calls?: ChatCompletionMessageToolCall;
+		tool_calls?: ChatCompletionChunkToolCallDelta[] | ChatCompletionChunkToolCallDelta;
 	};
-	finish_reason: "stop" | "length" | "tool_calls" | "content_filter" | "function_call";
+	finish_reason: "stop" | "length" | "tool_calls" | "content_filter" | "function_call" | null;
 	index: number;
 }
