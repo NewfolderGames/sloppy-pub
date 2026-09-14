@@ -637,6 +637,18 @@ describe("XML Command Extraction and Tag Stripping", () => {
 			assert.strictEqual(result.director?.plan, "New plan");
 		});
 
+		it("parses chapter tags with title and summary attributes or content", () => {
+			const input = `<chapter title="Chapter 2: The Whispering Ruins" summary="Discovered ancient crypt." />
+<chapter title="Chapter 3">Escaped the falling dungeon.</chapter>`;
+			const result = parseCommands(input);
+
+			assert.strictEqual(result.chapters.length, 2);
+			assert.strictEqual(result.chapters[0].title, "Chapter 2: The Whispering Ruins");
+			assert.strictEqual(result.chapters[0].summary, "Discovered ancient crypt.");
+			assert.strictEqual(result.chapters[1].title, "Chapter 3");
+			assert.strictEqual(result.chapters[1].summary, "Escaped the falling dungeon.");
+		});
+
 		it("handles empty and unclosed command tags", () => {
 			const input = `Dialogue text <state key="" value="" /> <state key="flag" value="true"`;
 			const result = parseCommands(input);
@@ -669,6 +681,14 @@ Second line.`;
 			const input = `Some narrative <state key="open" value="true"`;
 			const result = stripCommandTags(input);
 			assert.strictEqual(result.trim(), "Some narrative");
+		});
+
+		it("strips chapter command tags", () => {
+			const input = `Prologue complete.
+<chapter title="Chapter 1" summary="The beginning" />
+The journey begins.`;
+			const result = stripCommandTags(input);
+			assert.strictEqual(result, "Prologue complete.\nThe journey begins.");
 		});
 
 		it("preserves non-command HTML tags", () => {
@@ -759,6 +779,26 @@ Take a look at my wares.
 
 			assert.strictEqual(result.blocks.length, 1);
 			assert.strictEqual(result.blocks[0].content, "I made it.\nTime to rest.");
+		});
+
+		it("extracts chapter commands and strips them from character block", () => {
+			const input = `<character id="hero" name="Hero">
+We finally made it out of the labyrinth.
+<chapter title="Chapter 4: The Surface" summary="Escaped the underground maze." />
+The sun is shining.
+</character>`;
+
+			const result = parseRoleplayResponse(input);
+
+			assert.ok(result.commands);
+			assert.strictEqual(result.commands?.chapters.length, 1);
+			assert.strictEqual(result.commands?.chapters[0].title, "Chapter 4: The Surface");
+			assert.strictEqual(result.commands?.chapters[0].summary, "Escaped the underground maze.");
+			assert.strictEqual(result.blocks.length, 1);
+			assert.strictEqual(
+				result.blocks[0].content,
+				"We finally made it out of the labyrinth.\nThe sun is shining.",
+			);
 		});
 
 	});

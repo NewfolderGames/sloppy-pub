@@ -196,6 +196,17 @@ Example with child tags:
 </director>
 \`\`\`
 
+### Chapter Checkpoints (\`<chapter>\`)
+
+The \`<chapter>\` tag records a story chapter checkpoint when a major story arc or narrative milestone concludes.
+- \`title\` (required): Title or name of the new chapter.
+- \`summary\` (required): Concise narrative summary of story events up to this checkpoint.
+
+Example:
+\`\`\`xml
+<chapter title="Chapter 2: The Whispering Ruins" summary="The adventurers discovered the sunken temple entrance." />
+\`\`\`
+
 ---
 
 # Response Formatting

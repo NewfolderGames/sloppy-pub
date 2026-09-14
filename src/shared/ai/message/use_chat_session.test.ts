@@ -209,6 +209,7 @@ describe("runChatStream XML Command Execution and Turn Handling", () => {
 <state character="Hero" category="emotion" name="awe" value="high" />
 <event type="narrative" summary="Discovered ancient ruins of the first kingdom" />
 <director thought="Player discovered lore milestone" plan="Reveal guardian next turn" instructions="Focus on mystery" />
+<chapter title="Chapter 2: The Sunken Vault" summary="Hero uncovered the sunken vault." />
 <character id="NARRATOR">Towering stone columns rise from the mist ahead.</character>`,
 							},
 							finish_reason: "stop",
@@ -244,12 +245,19 @@ describe("runChatStream XML Command Execution and Turn Handling", () => {
 		assert.ok(session.director.plans.includes("Reveal guardian next turn"));
 		assert.strictEqual(session.director.instructions, "Focus on mystery");
 
+		// Chapter checkpoint created
+		assert.ok(session.instance.chapters);
+		assert.strictEqual(session.instance.chapters.length, 1);
+		assert.strictEqual(session.instance.chapters[0].title, "Chapter 2: The Sunken Vault");
+		assert.strictEqual(session.instance.chapters[0].summary, "Hero uncovered the sunken vault.");
+
 		// Stored message tree contains cleaned content
 		const messages = session.treeManager.getMessages();
 		assert.strictEqual(messages.length, 2);
 		assert.ok(!messages[1].data.content?.includes("<state"));
 		assert.ok(!messages[1].data.content?.includes("<event"));
 		assert.ok(!messages[1].data.content?.includes("<director"));
+		assert.ok(!messages[1].data.content?.includes("<chapter"));
 		assert.ok(messages[1].data.content?.includes("Towering stone columns"));
 	});
 

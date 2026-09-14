@@ -16,7 +16,7 @@ import { resolveSessionLorebookIds } from "./session_lorebooks.ts";
 import { createInstanceSession, type InstanceSession, saveInstance } from "../../world/instance_manager.ts";
 import { STATE_TOOL_DEFINITIONS } from "../../world/state_store.ts";
 import { addSessionEvent, EVENT_TOOL_DEFINITIONS } from "../../world/tools/event_tools.ts";
-import { CHAPTER_TOOL_DEFINITIONS } from "../../world/tools/chapter_tools.ts";
+import { addChapter, CHAPTER_TOOL_DEFINITIONS } from "../../world/tools/chapter_tools.ts";
 import { DIRECTOR_TOOL_DEFINITIONS } from "../../world/tools/director_tools.ts";
 import { updateDirectorPlan, updateDirectorThought } from "../../session/director.ts";
 import type { WorldInstance, WorldStates } from "../../world/types.ts";
@@ -310,6 +310,17 @@ export async function runChatStream(options: RunChatStreamOptions): Promise<void
 				}
 
 				saveInstance(session.instance);
+
+			}
+
+			if (parsed.commands.chapters && parsed.commands.chapters.length > 0) {
+
+				for (const chapterCmd of parsed.commands.chapters) {
+					addChapter(session.instance, {
+						title: chapterCmd.title,
+						summary: chapterCmd.summary,
+					});
+				}
 
 			}
 

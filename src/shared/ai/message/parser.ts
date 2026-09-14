@@ -1,4 +1,4 @@
-import type { ChoiceBlock, ChoiceOption, DirectorCommand, EventCommand, MessageBlock, ParsedCommands, ParsedMessage, StateCommand, TurnAction } from "@/shared/ai/message/types.ts";
+import type { ChapterCommand, ChoiceBlock, ChoiceOption, DirectorCommand, EventCommand, MessageBlock, ParsedCommands, ParsedMessage, StateCommand, TurnAction } from "@/shared/ai/message/types.ts";
 import type { StateValue } from "@/shared/world/types.ts";
 
 export function parseStateValue(raw: string): StateValue {
@@ -46,7 +46,7 @@ export function parseStateValue(raw: string): StateValue {
 }
 
 interface CommandSpan {
-	tag: "state" | "event" | "director";
+	tag: "state" | "event" | "director" | "chapter";
 	start: number;
 	end: number;
 	attrs: Record<string, string>;
@@ -56,13 +56,13 @@ interface CommandSpan {
 function extractCommandSpans(text: string): CommandSpan[] {
 
 	const spans: CommandSpan[] = [];
-	const openTagRegex = /<(state|event|director)\b([^>]*)(\/?>|$)/gi;
+	const openTagRegex = /<(state|event|director|chapter)\b([^>]*)(\/?>|$)/gi;
 
 	let match: RegExpExecArray | null;
 
 	while ((match = openTagRegex.exec(text)) !== null) {
 
-		const tag = match[1].toLowerCase() as "state" | "event" | "director";
+		const tag = match[1].toLowerCase() as "state" | "event" | "director" | "chapter";
 		const attrString = match[2];
 		const closer = match[3];
 		const tagStart = match.index;
@@ -90,7 +90,7 @@ function extractCommandSpans(text: string): CommandSpan[] {
 			closeTagRegex.lastIndex = tagContentStart;
 			const closeMatch = closeTagRegex.exec(text);
 
-			const nextTagRegex = /<(?:state|event|director|character|system|choices|turn)\b/gi;
+			const nextTagRegex = /<(?:state|event|director|chapter|character|system|choices|turn)\b/gi;
 			nextTagRegex.lastIndex = tagContentStart;
 			const nextTagMatch = nextTagRegex.exec(text);
 
@@ -105,6 +105,7 @@ function extractCommandSpans(text: string): CommandSpan[] {
 				const hasSelfContainedAttrs
 					= (tag === "state" && (attrs.value !== undefined || attrs.op === "delete" || attrs.operation === "delete"))
 						|| (tag === "event" && attrs.summary !== undefined)
+						|| (tag === "chapter" && (attrs.title !== undefined || attrs.summary !== undefined))
 						|| (tag === "director" && (attrs.thought !== undefined || attrs.plan !== undefined || attrs.instructions !== undefined));
 
 				if (hasSelfContainedAttrs) {
@@ -261,11 +262,28 @@ function parseDirectorCommand(attrs: Record<string, string>, content: string): D
 
 }
 
+function parseChapterCommand(attrs: Record<string, string>, content: string): ChapterCommand {
+
+	const title = attrs.title ?? attrs.name ?? "New Chapter";
+	let summary = attrs.summary?.trim() ?? "";
+
+	if (!summary && content.trim().length > 0) {
+		summary = content.trim();
+	}
+
+	return {
+		title: title.trim(),
+		summary,
+	};
+
+}
+
 export function parseCommands(text: string): ParsedCommands {
 
 	const spans = extractCommandSpans(text);
 	const states: StateCommand[] = [];
 	const events: EventCommand[] = [];
+	const chapters: ChapterCommand[] = [];
 	let director: DirectorCommand | undefined;
 
 	for (const span of spans) {
@@ -275,6 +293,9 @@ export function parseCommands(text: string): ParsedCommands {
 		}
 		else if (span.tag === "event") {
 			events.push(parseEventCommand(span.attrs, span.content));
+		}
+		else if (span.tag === "chapter") {
+			chapters.push(parseChapterCommand(span.attrs, span.content));
 		}
 		else if (span.tag === "director") {
 
@@ -307,6 +328,7 @@ export function parseCommands(text: string): ParsedCommands {
 	return {
 		states,
 		events,
+		chapters,
 		...(director ? { director } : {}),
 	};
 
@@ -453,6 +475,7 @@ export function parseXmlRoleplayResponse(rawText: string): ParsedMessage {
 	const hasCommands
 		= parsedCommands.states.length > 0
 			|| parsedCommands.events.length > 0
+			|| parsedCommands.chapters.length > 0
 			|| parsedCommands.director !== undefined;
 
 	const blocks: MessageBlock[] = [];
@@ -633,6 +656,7 @@ export function parseJsonSchemaResponse(jsonString: string): ParsedMessage {
 	const blocks: MessageBlock[] = [];
 	const collectedStates: StateCommand[] = [];
 	const collectedEvents: EventCommand[] = [];
+	const collectedChapters: ChapterCommand[] = [];
 	let collectedDirector: DirectorCommand | undefined;
 
 	if (data.commands && typeof data.commands === "object") {
@@ -641,6 +665,9 @@ export function parseJsonSchemaResponse(jsonString: string): ParsedMessage {
 		}
 		if (Array.isArray(data.commands.events)) {
 			collectedEvents.push(...data.commands.events);
+		}
+		if (Array.isArray(data.commands.chapters)) {
+			collectedChapters.push(...data.commands.chapters);
 		}
 		if (data.commands.director && typeof data.commands.director === "object") {
 			collectedDirector = { ...data.commands.director };
@@ -659,6 +686,7 @@ export function parseJsonSchemaResponse(jsonString: string): ParsedMessage {
 
 			collectedStates.push(...blockCmds.states);
 			collectedEvents.push(...blockCmds.events);
+			collectedChapters.push(...blockCmds.chapters);
 			if (blockCmds.director) {
 				if (!collectedDirector) {
 					collectedDirector = {};
@@ -733,6 +761,7 @@ export function parseJsonSchemaResponse(jsonString: string): ParsedMessage {
 			if (contentParsed.commands) {
 				collectedStates.push(...contentParsed.commands.states);
 				collectedEvents.push(...contentParsed.commands.events);
+				collectedChapters.push(...contentParsed.commands.chapters);
 				if (contentParsed.commands.director) {
 					if (!collectedDirector) {
 						collectedDirector = {};
@@ -753,6 +782,7 @@ export function parseJsonSchemaResponse(jsonString: string): ParsedMessage {
 			const contentCmds = parseCommands(data.content);
 			collectedStates.push(...contentCmds.states);
 			collectedEvents.push(...contentCmds.events);
+			collectedChapters.push(...contentCmds.chapters);
 			if (contentCmds.director) {
 				if (!collectedDirector) {
 					collectedDirector = {};
@@ -779,10 +809,16 @@ export function parseJsonSchemaResponse(jsonString: string): ParsedMessage {
 	}
 
 	let commands: ParsedCommands | undefined;
-	if (collectedStates.length > 0 || collectedEvents.length > 0 || collectedDirector !== undefined) {
+	if (
+		collectedStates.length > 0
+		|| collectedEvents.length > 0
+		|| collectedChapters.length > 0
+		|| collectedDirector !== undefined
+	) {
 		commands = {
 			states: collectedStates,
 			events: collectedEvents,
+			chapters: collectedChapters,
 			...(collectedDirector ? { director: collectedDirector } : {}),
 		};
 	}

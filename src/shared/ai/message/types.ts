@@ -22,10 +22,16 @@ export interface DirectorCommand {
 	instructions?: string;
 }
 
+export interface ChapterCommand {
+	title: string;
+	summary: string;
+}
+
 export interface ParsedCommands {
 	states: StateCommand[];
 	events: EventCommand[];
 	director?: DirectorCommand;
+	chapters: ChapterCommand[];
 }
 
 export interface CharacterBlock {
