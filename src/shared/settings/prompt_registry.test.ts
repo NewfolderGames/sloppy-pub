@@ -57,13 +57,13 @@ describe("Prompt Registry", () => {
 			"system:app_prompt",
 			"system:world_prompt",
 			"system:character_prompt",
-			"system:chapters_summary",
-			"system:director_prompt",
-			"system:chat_history",
-			"system:world_states",
-			"system:character_instances",
 			"system:lore_prompt",
+			"system:chapters_summary",
+			"system:chat_history",
+			"system:character_instances",
+			"system:world_states",
 			"system:session_events",
+			"system:director_prompt",
 			"system:wizard_prompt",
 		]);
 
@@ -73,13 +73,13 @@ describe("Prompt Registry", () => {
 			"system:app_prompt": { enabled: true, role: "system" },
 			"system:world_prompt": { enabled: true, role: "system" },
 			"system:character_prompt": { enabled: true, role: "system" },
+			"system:lore_prompt": { enabled: true, role: "system" },
 			"system:chapters_summary": { enabled: true, role: "system" },
-			"system:director_prompt": { enabled: true, role: "system" },
 			"system:chat_history": { enabled: true },
-			"system:world_states": { enabled: true, role: "user" },
 			"system:character_instances": { enabled: true, role: "user" },
-			"system:lore_prompt": { enabled: true, role: "user" },
+			"system:world_states": { enabled: true, role: "user" },
 			"system:session_events": { enabled: true, role: "user" },
+			"system:director_prompt": { enabled: true, role: "user" },
 			"system:wizard_prompt": { enabled: true, role: "system" },
 		});
 	});
@@ -114,17 +114,17 @@ describe("Prompt Registry", () => {
 				systemId === "system:world_prompt"
 				|| systemId === "system:app_prompt"
 				|| systemId === "system:character_prompt"
+				|| systemId === "system:lore_prompt"
 				|| systemId === "system:chapters_summary"
-				|| systemId === "system:director_prompt"
 				|| systemId === "system:wizard_prompt"
 			) {
 				assert.equal(item.role, "system");
 			}
 			else if (
-				systemId === "system:world_states"
-				|| systemId === "system:character_instances"
-				|| systemId === "system:lore_prompt"
+				systemId === "system:character_instances"
+				|| systemId === "system:world_states"
 				|| systemId === "system:session_events"
+				|| systemId === "system:director_prompt"
 			) {
 				assert.equal(item.role, "user");
 			}
@@ -282,13 +282,13 @@ describe("Prompt Registry", () => {
 			"system:app_prompt",
 			"system:world_prompt",
 			"system:character_prompt",
-			"system:chapters_summary",
-			"system:director_prompt",
-			"system:chat_history",
-			"system:world_states",
-			"system:character_instances",
 			"system:lore_prompt",
+			"system:chapters_summary",
+			"system:chat_history",
+			"system:character_instances",
+			"system:world_states",
 			"system:session_events",
+			"system:director_prompt",
 			"system:wizard_prompt",
 		]);
 
@@ -349,13 +349,13 @@ describe("Prompt Registry", () => {
 			"system:app_prompt",
 			"system:world_prompt",
 			"system:character_prompt",
-			"system:chapters_summary",
-			"system:director_prompt",
-			"system:chat_history",
-			"system:world_states",
-			"system:character_instances",
 			"system:lore_prompt",
+			"system:chapters_summary",
+			"system:chat_history",
+			"system:character_instances",
+			"system:world_states",
 			"system:session_events",
+			"system:director_prompt",
 			"system:wizard_prompt",
 		]);
 	});
@@ -395,26 +395,26 @@ describe("Prompt Registry", () => {
 		const prompt1 = addPrompt({ name: "User 1" });
 		const prompt2 = addPrompt({ name: "User 2" });
 
-		// Initial order: app_prompt, world_prompt, character_prompt, chapters_summary, director_prompt, chat_history, world_states, character_instances, lore_prompt, session_events, prompt1, prompt2
+		// Initial order: app_prompt, world_prompt, character_prompt, lore_prompt, chapters_summary, chat_history, character_instances, world_states, session_events, director_prompt, wizard_prompt, prompt1, prompt2
 		let settings = getPromptSettings();
 
 		assert.deepEqual(settings.order, [
 			"system:app_prompt",
 			"system:world_prompt",
 			"system:character_prompt",
-			"system:chapters_summary",
-			"system:director_prompt",
-			"system:chat_history",
-			"system:world_states",
-			"system:character_instances",
 			"system:lore_prompt",
+			"system:chapters_summary",
+			"system:chat_history",
+			"system:character_instances",
+			"system:world_states",
 			"system:session_events",
+			"system:director_prompt",
 			"system:wizard_prompt",
 			prompt1.id,
 			prompt2.id,
 		]);
 
-		// Move prompt1 up (swaps with session_events)
+		// Move prompt1 up (swaps with wizard_prompt)
 		const moveUpResult = reorderPrompt(prompt1.id, "up");
 
 		assert.equal(moveUpResult, true);
@@ -425,19 +425,19 @@ describe("Prompt Registry", () => {
 			"system:app_prompt",
 			"system:world_prompt",
 			"system:character_prompt",
-			"system:chapters_summary",
-			"system:director_prompt",
-			"system:chat_history",
-			"system:world_states",
-			"system:character_instances",
 			"system:lore_prompt",
+			"system:chapters_summary",
+			"system:chat_history",
+			"system:character_instances",
+			"system:world_states",
 			"system:session_events",
+			"system:director_prompt",
 			prompt1.id,
 			"system:wizard_prompt",
 			prompt2.id,
 		]);
 
-		// Move system:lore_prompt down to swap with prompt1
+		// Move system:lore_prompt down to swap with chapters_summary
 		const moveDownResult = reorderPrompt("system:lore_prompt", "down");
 
 		assert.equal(moveDownResult, true);
@@ -449,28 +449,21 @@ describe("Prompt Registry", () => {
 			"system:world_prompt",
 			"system:character_prompt",
 			"system:chapters_summary",
-			"system:director_prompt",
-			"system:chat_history",
-			"system:world_states",
-			"system:character_instances",
-			"system:session_events",
 			"system:lore_prompt",
+			"system:chat_history",
+			"system:character_instances",
+			"system:world_states",
+			"system:session_events",
+			"system:director_prompt",
 			prompt1.id,
 			"system:wizard_prompt",
 			prompt2.id,
 		]);
 
-		// Move prompt1 to the top (8 moves to go from index 8 to index 0)
-		reorderPrompt(prompt1.id, "up");
-		reorderPrompt(prompt1.id, "up");
-		reorderPrompt(prompt1.id, "up");
-		reorderPrompt(prompt1.id, "up");
-		reorderPrompt(prompt1.id, "up");
-		reorderPrompt(prompt1.id, "up");
-		reorderPrompt(prompt1.id, "up");
-		reorderPrompt(prompt1.id, "up");
-		reorderPrompt(prompt1.id, "up");
-		reorderPrompt(prompt1.id, "up");
+		// Move prompt1 to the top (10 moves to go from index 10 to index 0)
+		for (let i = 0; i < 10; i++) {
+			reorderPrompt(prompt1.id, "up");
+		}
 
 		settings = getPromptSettings();
 
@@ -480,12 +473,12 @@ describe("Prompt Registry", () => {
 			"system:world_prompt",
 			"system:character_prompt",
 			"system:chapters_summary",
-			"system:director_prompt",
-			"system:chat_history",
-			"system:world_states",
-			"system:character_instances",
-			"system:session_events",
 			"system:lore_prompt",
+			"system:chat_history",
+			"system:character_instances",
+			"system:world_states",
+			"system:session_events",
+			"system:director_prompt",
 			"system:wizard_prompt",
 			prompt2.id,
 		]);
@@ -567,13 +560,13 @@ describe("Prompt Registry", () => {
 			"system:app_prompt",
 			"system:world_prompt",
 			"system:character_prompt",
-			"system:chapters_summary",
-			"system:director_prompt",
-			"system:chat_history",
-			"system:world_states",
-			"system:character_instances",
 			"system:lore_prompt",
+			"system:chapters_summary",
+			"system:chat_history",
+			"system:character_instances",
+			"system:world_states",
 			"system:session_events",
+			"system:director_prompt",
 			"system:wizard_prompt",
 		]);
 		assert.deepEqual(resetResult.userPrompts, {});
@@ -585,13 +578,13 @@ describe("Prompt Registry", () => {
 			"system:app_prompt",
 			"system:world_prompt",
 			"system:character_prompt",
-			"system:chapters_summary",
-			"system:director_prompt",
-			"system:chat_history",
-			"system:world_states",
-			"system:character_instances",
 			"system:lore_prompt",
+			"system:chapters_summary",
+			"system:chat_history",
+			"system:character_instances",
+			"system:world_states",
 			"system:session_events",
+			"system:director_prompt",
 			"system:wizard_prompt",
 		]);
 		assert.deepEqual(fetched.userPrompts, {});
@@ -613,13 +606,13 @@ describe("Prompt Registry", () => {
 			"system:app_prompt",
 			"system:world_prompt",
 			"system:character_prompt",
-			"system:chapters_summary",
-			"system:director_prompt",
-			"system:chat_history",
-			"system:world_states",
-			"system:character_instances",
 			"system:lore_prompt",
+			"system:chapters_summary",
+			"system:chat_history",
+			"system:character_instances",
+			"system:world_states",
 			"system:session_events",
+			"system:director_prompt",
 			"system:wizard_prompt",
 		]);
 	});
@@ -669,13 +662,13 @@ describe("Prompt Registry", () => {
 			"system:app_prompt",
 			"system:world_prompt",
 			"system:character_prompt",
-			"system:chapters_summary",
-			"system:director_prompt",
-			"system:chat_history",
-			"system:world_states",
-			"system:character_instances",
 			"system:lore_prompt",
+			"system:chapters_summary",
+			"system:chat_history",
+			"system:character_instances",
+			"system:world_states",
 			"system:session_events",
+			"system:director_prompt",
 			"system:wizard_prompt",
 		]);
 
@@ -1034,7 +1027,7 @@ describe("Prompt Registry", () => {
 			assert.deepEqual(assembled[2], { role: "user", content: "Hello" });
 		});
 
-		it("formats character prompt after world prompt and character instances after world states", () => {
+		it("formats character prompt after world prompt and character instances before world states", () => {
 			const sessionMessages: ChatCompletionMessageParam[] = [
 				{ role: "user", content: "Hello" },
 			];
@@ -1066,15 +1059,15 @@ describe("Prompt Registry", () => {
 			});
 			// 4. chat_history
 			assert.deepEqual(assembled[3], { role: "user", content: "Hello" });
-			// 5. world_states
+			// 5. character_instances
 			assert.deepEqual(assembled[4], {
 				role: "user",
-				content: "Current Session State:\n- alert: none",
+				content: "Dr. Elena Vance thoughts and emotions",
 			});
-			// 6. character_instances
+			// 6. world_states
 			assert.deepEqual(assembled[5], {
 				role: "user",
-				content: "Dr. Elena Vance thoughts and emotions",
+				content: "Current Session State:\n- alert: none",
 			});
 		});
 

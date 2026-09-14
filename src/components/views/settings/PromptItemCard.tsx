@@ -60,7 +60,12 @@ export function PromptItemCard(props: Readonly<PromptItemCardProps>) {
 
 		const canConfigureRole = systemItem.id !== "system:chat_history";
 
-		const currentRole = systemItem.role ?? (systemItem.id === "system:world_states" ? "user" : "system");
+		const isDefaultUserRole = systemItem.id === "system:character_instances"
+			|| systemItem.id === "system:world_states"
+			|| systemItem.id === "system:session_events"
+			|| systemItem.id === "system:director_prompt";
+
+		const currentRole = systemItem.role ?? (isDefaultUserRole ? "user" : "system");
 
 		const handleToggleSystemEnabled = (event: ChangeEvent<HTMLInputElement>) => {
 			onToggleSystemPrompt?.(systemItem.id, event.target.checked);

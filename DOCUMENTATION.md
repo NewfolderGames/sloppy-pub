@@ -163,7 +163,7 @@ The agent maintains hidden internal thoughts, strategic plans, and steering inst
 These internal thoughts and plans remain hidden from user-facing conversation turns.
 
 The director records thoughts and updates plans through inline XML director tags during generation.
-When enabled, the prompt pipeline injects director guideline instructions into the system prompt.
+When enabled, the prompt pipeline injects director guideline instructions into the prompt sequence.
 The director steers the conversation without breaking character immersion.
 
 ### AI Assistant and Creation Wizard

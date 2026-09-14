@@ -106,32 +106,32 @@ function clonePromptSettings(settings: PromptSettings): PromptSettings {
 			enabled: settings.systemPrompts?.["system:character_prompt"]?.enabled ?? true,
 			role: settings.systemPrompts?.["system:character_prompt"]?.role ?? "system",
 		},
+		"system:lore_prompt": {
+			enabled: settings.systemPrompts?.["system:lore_prompt"]?.enabled ?? true,
+			role: settings.systemPrompts?.["system:lore_prompt"]?.role ?? "system",
+		},
 		"system:chapters_summary": {
 			enabled: settings.systemPrompts?.["system:chapters_summary"]?.enabled ?? true,
 			role: settings.systemPrompts?.["system:chapters_summary"]?.role ?? "system",
 		},
-		"system:director_prompt": {
-			enabled: settings.systemPrompts?.["system:director_prompt"]?.enabled ?? true,
-			role: settings.systemPrompts?.["system:director_prompt"]?.role ?? "system",
-		},
 		"system:chat_history": {
 			enabled: settings.systemPrompts?.["system:chat_history"]?.enabled ?? true,
-		},
-		"system:world_states": {
-			enabled: settings.systemPrompts?.["system:world_states"]?.enabled ?? true,
-			role: settings.systemPrompts?.["system:world_states"]?.role ?? "user",
 		},
 		"system:character_instances": {
 			enabled: settings.systemPrompts?.["system:character_instances"]?.enabled ?? true,
 			role: settings.systemPrompts?.["system:character_instances"]?.role ?? "user",
 		},
-		"system:lore_prompt": {
-			enabled: settings.systemPrompts?.["system:lore_prompt"]?.enabled ?? true,
-			role: settings.systemPrompts?.["system:lore_prompt"]?.role ?? "user",
+		"system:world_states": {
+			enabled: settings.systemPrompts?.["system:world_states"]?.enabled ?? true,
+			role: settings.systemPrompts?.["system:world_states"]?.role ?? "user",
 		},
 		"system:session_events": {
 			enabled: settings.systemPrompts?.["system:session_events"]?.enabled ?? true,
 			role: settings.systemPrompts?.["system:session_events"]?.role ?? "user",
+		},
+		"system:director_prompt": {
+			enabled: settings.systemPrompts?.["system:director_prompt"]?.enabled ?? true,
+			role: settings.systemPrompts?.["system:director_prompt"]?.role ?? "user",
 		},
 		"system:wizard_prompt": {
 			enabled: settings.systemPrompts?.["system:wizard_prompt"]?.enabled ?? true,
@@ -178,13 +178,13 @@ function migrateLegacyPromptSettings(candidate: Record<string, unknown>): Prompt
 		"system:app_prompt": { enabled: true, role: "system" },
 		"system:world_prompt": { enabled: true, role: "system" },
 		"system:character_prompt": { enabled: true, role: "system" },
+		"system:lore_prompt": { enabled: true, role: "system" },
 		"system:chapters_summary": { enabled: true, role: "system" },
-		"system:director_prompt": { enabled: true, role: "system" },
 		"system:chat_history": { enabled: true },
-		"system:world_states": { enabled: true, role: "user" },
 		"system:character_instances": { enabled: true, role: "user" },
-		"system:lore_prompt": { enabled: true, role: "user" },
+		"system:world_states": { enabled: true, role: "user" },
 		"system:session_events": { enabled: true, role: "user" },
+		"system:director_prompt": { enabled: true, role: "user" },
 		"system:wizard_prompt": { enabled: true, role: "system" },
 	};
 
@@ -380,32 +380,32 @@ function sanitizePromptSettings(data: unknown): PromptSettings {
 			enabled: typeof rawCharacterPrompt?.enabled === "boolean" ? rawCharacterPrompt.enabled : true,
 			role: parseRole(rawCharacterPrompt?.role, "system"),
 		},
+		"system:lore_prompt": {
+			enabled: typeof rawLorePrompt?.enabled === "boolean" ? rawLorePrompt.enabled : true,
+			role: parseRole(rawLorePrompt?.role, "system"),
+		},
 		"system:chapters_summary": {
 			enabled: typeof rawChaptersSummary?.enabled === "boolean" ? rawChaptersSummary.enabled : true,
 			role: parseRole(rawChaptersSummary?.role, "system"),
 		},
-		"system:director_prompt": {
-			enabled: typeof rawDirectorPrompt?.enabled === "boolean" ? rawDirectorPrompt.enabled : true,
-			role: parseRole(rawDirectorPrompt?.role, "system"),
-		},
 		"system:chat_history": {
 			enabled: typeof rawChatHistory?.enabled === "boolean" ? rawChatHistory.enabled : true,
-		},
-		"system:world_states": {
-			enabled: typeof rawWorldStates?.enabled === "boolean" ? rawWorldStates.enabled : true,
-			role: parseRole(rawWorldStates?.role, "user"),
 		},
 		"system:character_instances": {
 			enabled: typeof rawCharacterInstances?.enabled === "boolean" ? rawCharacterInstances.enabled : true,
 			role: parseRole(rawCharacterInstances?.role, "user"),
 		},
-		"system:lore_prompt": {
-			enabled: typeof rawLorePrompt?.enabled === "boolean" ? rawLorePrompt.enabled : true,
-			role: parseRole(rawLorePrompt?.role, "user"),
+		"system:world_states": {
+			enabled: typeof rawWorldStates?.enabled === "boolean" ? rawWorldStates.enabled : true,
+			role: parseRole(rawWorldStates?.role, "user"),
 		},
 		"system:session_events": {
 			enabled: typeof rawSessionEvents?.enabled === "boolean" ? rawSessionEvents.enabled : true,
 			role: parseRole(rawSessionEvents?.role, "user"),
+		},
+		"system:director_prompt": {
+			enabled: typeof rawDirectorPrompt?.enabled === "boolean" ? rawDirectorPrompt.enabled : true,
+			role: parseRole(rawDirectorPrompt?.role, "user"),
 		},
 		"system:wizard_prompt": {
 			enabled: typeof rawWizardPrompt?.enabled === "boolean" ? rawWizardPrompt.enabled : true,

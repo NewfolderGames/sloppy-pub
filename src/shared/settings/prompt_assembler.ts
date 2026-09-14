@@ -118,7 +118,7 @@ export function assembleChatPromptMessages(
 				}
 
 				if (formattedDirector) {
-					const role = currentSettings.systemPrompts[id]?.role ?? "system";
+					const role = currentSettings.systemPrompts[id]?.role ?? "user";
 
 					assembledMessages.push({
 						role,
@@ -184,7 +184,7 @@ export function assembleChatPromptMessages(
 					const formattedLore = synthesizeLorePrompt(lorebookId, messageForLore ?? undefined);
 
 					if (formattedLore.length > 0) {
-						const role = currentSettings.systemPrompts[id]?.role ?? "user";
+						const role = currentSettings.systemPrompts[id]?.role ?? "system";
 
 						assembledMessages.push({
 							role,
