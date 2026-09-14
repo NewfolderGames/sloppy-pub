@@ -1,7 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { CharacterStateStore } from "./state_store.ts";
-import { executeCharacterTool } from "./tools.ts";
 import type { CharacterInstance } from "./types.ts";
 
 describe("CharacterStateStore & Character Tools", () => {
@@ -130,58 +129,51 @@ describe("CharacterStateStore & Character Tools", () => {
 		});
 	});
 
-	describe("mutate_character Tool Execution", () => {
+	describe("applyOperations", () => {
 		it("applies atomic batch set and delete operations successfully", () => {
 			const store = new CharacterStateStore([createSampleInstance()]);
 
-			const result = executeCharacterTool(
-				"mutate_character",
+			const result = store.applyOperations("elena_vance", [
 				{
-					character: "elena_vance",
-					operations: [
-						{
-							type: "set",
-							category: "thought",
-							title: "Hypothesis",
-							internal_monologue: "The signal contains binary prime patterns.",
-						},
-						{
-							type: "delete",
-							category: "thought",
-							title: "Pulsar Anomaly",
-						},
-						{
-							type: "set",
-							category: "emotion",
-							name: "Wonder",
-							internal_monologue: "A profound sense of contact.",
-						},
-						{
-							type: "delete",
-							category: "emotion",
-							name: "Focus",
-						},
-						{
-							type: "set",
-							category: "goal",
-							name: "Decode Header",
-							internal_monologue: "Extract the synchronization bytes.",
-						},
-						{
-							type: "set",
-							category: "state",
-							key: "decoding_progress",
-							value: 15,
-						},
-						{
-							type: "delete",
-							category: "state",
-							key: "energy",
-						},
-					],
+					type: "set",
+					category: "thought",
+					title: "Hypothesis",
+					internal_monologue: "The signal contains binary prime patterns.",
 				},
-				store,
-			);
+				{
+					type: "delete",
+					category: "thought",
+					title: "Pulsar Anomaly",
+				},
+				{
+					type: "set",
+					category: "emotion",
+					name: "Wonder",
+					internal_monologue: "A profound sense of contact.",
+				},
+				{
+					type: "delete",
+					category: "emotion",
+					name: "Focus",
+				},
+				{
+					type: "set",
+					category: "goal",
+					name: "Decode Header",
+					internal_monologue: "Extract the synchronization bytes.",
+				},
+				{
+					type: "set",
+					category: "state",
+					key: "decoding_progress",
+					value: 15,
+				},
+				{
+					type: "delete",
+					category: "state",
+					key: "energy",
+				},
+			]);
 
 			assert.equal(result.status, "success");
 			assert.equal(result.applied_count, 7);
@@ -203,154 +195,33 @@ describe("CharacterStateStore & Character Tools", () => {
 		it("returns error when character is not found", () => {
 			const store = new CharacterStateStore([createSampleInstance()]);
 
-			const result = executeCharacterTool(
-				"mutate_character",
+			const result = store.applyOperations("unknown_person", [
 				{
-					character: "unknown_person",
-					operations: [
-						{
-							type: "set",
-							category: "thought",
-							title: "Test",
-							internal_monologue: "Monologue",
-						},
-					],
+					type: "set",
+					category: "thought",
+					title: "Test",
+					internal_monologue: "Monologue",
 				},
-				store,
-			);
+			]);
 
 			assert.equal(result.status, "error");
 			assert.ok(result.message?.includes("not found"));
-		});
-
-		it("returns error when operations parameter is invalid", () => {
-			const store = new CharacterStateStore([createSampleInstance()]);
-
-			const result = executeCharacterTool(
-				"mutate_character",
-				{
-					character: "elena_vance",
-					operations: "not_an_array",
-				},
-				store,
-			);
-
-			assert.equal(result.status, "error");
-			assert.ok(result.message?.includes("must be an array"));
-		});
-
-		it("returns error for unsupported operation type or category", () => {
-			const store = new CharacterStateStore([createSampleInstance()]);
-
-			const invalidTypeResult = executeCharacterTool(
-				"mutate_character",
-				{
-					character: "elena_vance",
-					operations: [
-						{
-							type: "invalid_type",
-							category: "thought",
-						},
-					],
-				},
-				store,
-			);
-
-			assert.equal(invalidTypeResult.status, "error");
-			assert.ok(invalidTypeResult.message?.includes("Unsupported operation type"));
-
-			const invalidCatResult = executeCharacterTool(
-				"mutate_character",
-				{
-					character: "elena_vance",
-					operations: [
-						{
-							type: "set",
-							category: "invalid_category",
-						},
-					],
-				},
-				store,
-			);
-
-			assert.equal(invalidCatResult.status, "error");
-			assert.ok(invalidCatResult.message?.includes("Unsupported category"));
-		});
-	});
-
-	describe("read_character Tool Execution", () => {
-		it("reads specific character when character argument is provided", () => {
-			const store = new CharacterStateStore([createSampleInstance()]);
-
-			const result = executeCharacterTool(
-				"read_character",
-				{ character: "elena_vance" },
-				store,
-			);
-
-			assert.equal(result.status, "success");
-			assert.ok(result.character);
-			assert.equal((result.character as CharacterInstance).name, "Dr. Elena Vance");
-		});
-
-		it("reads all characters when character argument is omitted", () => {
-			const store = new CharacterStateStore([createSampleInstance()]);
-
-			const result = executeCharacterTool("read_character", {}, store);
-
-			assert.equal(result.status, "success");
-			assert.ok(Array.isArray(result.characters));
-			assert.equal(result.characters.length, 1);
-		});
-
-		it("returns error when requested character is not found", () => {
-			const store = new CharacterStateStore([createSampleInstance()]);
-
-			const result = executeCharacterTool(
-				"read_character",
-				{ character: "ghost_character" },
-				store,
-			);
-
-			assert.equal(result.status, "error");
-			assert.ok(result.message?.includes("not found"));
-		});
-
-		it("returns error for unknown tool name", () => {
-			const store = new CharacterStateStore([createSampleInstance()]);
-
-			const result = executeCharacterTool("unknown_tool", {}, store);
-
-			assert.equal(result.status, "error");
-			assert.ok(result.message?.includes("Unknown character tool"));
 		});
 	});
 
 	describe("NPC Character Support", () => {
-		it("creates NPC without characterId", () => {
-			const store = new CharacterStateStore([]);
-
-			const result = executeCharacterTool(
-				"create_npc_character",
-				{ name: "Guard", description: "A city guard." },
-				store,
-			);
-
-			assert.equal(result.status, "success");
-			assert.ok(result.character);
-			assert.ok((result.character as CharacterInstance).isNpc);
-			assert.equal((result.character as CharacterInstance).characterId, undefined);
-			assert.equal((result.character as CharacterInstance).name, "Guard");
-		});
-
 		it("stores NPC and retrieves it by id", () => {
 			const store = new CharacterStateStore([]);
 
-			executeCharacterTool(
-				"create_npc_character",
-				{ name: "Merchant" },
-				store,
-			);
+			store.addInstance({
+				id: "npc_merchant",
+				name: "Merchant",
+				isNpc: true,
+				thoughts: [],
+				emotions: [],
+				goals: [],
+				states: {},
+			});
 
 			const allInstances = store.getAllInstances();
 			assert.equal(allInstances.length, 1);
@@ -361,17 +232,17 @@ describe("CharacterStateStore & Character Tools", () => {
 		it("cloning preserves isNpc flag", () => {
 			const store = new CharacterStateStore([]);
 
-			const result = executeCharacterTool(
-				"create_npc_character",
-				{ name: "Barkeep" },
-				store,
-			);
+			store.addInstance({
+				id: "npc_barkeep",
+				name: "Barkeep",
+				isNpc: true,
+				thoughts: [],
+				emotions: [],
+				goals: [],
+				states: {},
+			});
 
-			const npc = result.character as CharacterInstance;
-			assert.ok(npc.isNpc);
-
-			// getInstance clones, verify isNpc survives
-			const fetched = store.getInstance(npc.id);
+			const fetched = store.getInstance("npc_barkeep");
 			assert.ok(fetched);
 			assert.equal(fetched.isNpc, true);
 		});
@@ -379,11 +250,15 @@ describe("CharacterStateStore & Character Tools", () => {
 		it("lookup by name works for NPCs without characterId", () => {
 			const store = new CharacterStateStore([]);
 
-			executeCharacterTool(
-				"create_npc_character",
-				{ name: "Blacksmith" },
-				store,
-			);
+			store.addInstance({
+				id: "npc_blacksmith",
+				name: "Blacksmith",
+				isNpc: true,
+				thoughts: [],
+				emotions: [],
+				goals: [],
+				states: {},
+			});
 
 			const found = store.getInstance("Blacksmith");
 			assert.ok(found);
@@ -394,16 +269,18 @@ describe("CharacterStateStore & Character Tools", () => {
 		it("removeInstance works for NPC without characterId", () => {
 			const store = new CharacterStateStore([]);
 
-			const result = executeCharacterTool(
-				"create_npc_character",
-				{ name: "Alchemist" },
-				store,
-			);
+			store.addInstance({
+				id: "npc_alchemist",
+				name: "Alchemist",
+				isNpc: true,
+				thoughts: [],
+				emotions: [],
+				goals: [],
+				states: {},
+			});
 
-			const npc = result.character as CharacterInstance;
-
-			store.removeInstance(npc.id);
-			const fetched = store.getInstance(npc.id);
+			store.removeInstance("npc_alchemist");
+			const fetched = store.getInstance("npc_alchemist");
 			assert.equal(fetched, undefined);
 		});
 
@@ -412,13 +289,16 @@ describe("CharacterStateStore & Character Tools", () => {
 				{ ...createSampleInstance(), id: "tmpl_1", characterId: "hero_1", name: "Hero" },
 			]);
 
-			executeCharacterTool(
-				"create_npc_character",
-				{ name: "Villager" },
-				store,
-			);
+			store.addInstance({
+				id: "npc_villager",
+				name: "Villager",
+				isNpc: true,
+				thoughts: [],
+				emotions: [],
+				goals: [],
+				states: {},
+			});
 
-			// These lookups should not throw despite NPC having no characterId
 			const hero = store.getInstance("Hero");
 			assert.ok(hero);
 

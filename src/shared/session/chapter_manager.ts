@@ -154,16 +154,3 @@ export function compactSession(
 	return instance;
 
 }
-
-export {
-	CREATE_CHAPTER_TOOL,
-	COMPACT_SESSION_TOOL,
-	CHAPTER_TOOL_DEFINITIONS,
-	CHAPTER_TOOL_NAMES,
-	executeChapterTool,
-} from "../world/tools/chapter_tools.ts";
-export type {
-	CreateChapterArgs,
-	CompactSessionArgs,
-	ChapterToolResult,
-} from "../world/tools/chapter_tools.ts";

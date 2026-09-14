@@ -1,18 +1,8 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
-	PROPOSE_CHARACTER_MODIFICATION_TOOL,
-	PROPOSE_LORE_MODIFICATION_TOOL,
-	PROPOSE_PROMPT_MODIFICATION_TOOL,
-	PROPOSE_UNIVERSE_MODIFICATION_TOOL,
-	PROPOSE_WORLD_MODIFICATION_TOOL,
+	ALL_ASSISTANT_TOOLS,
 } from "../assistance/schemas.ts";
-import { CHARACTER_TOOL_DEFINITIONS, CHARACTER_TOOL_NAMES } from "../../character/tools.ts";
-import { LORE_TOOL_DEFINITIONS, LORE_TOOL_NAMES } from "../../lore/tools.ts";
-import { STATE_TOOL_DEFINITIONS, STATE_TOOL_NAMES } from "../../world/state_tools.ts";
-import { CHAPTER_TOOL_DEFINITIONS, CHAPTER_TOOL_NAMES } from "../../world/tools/chapter_tools.ts";
-import { DIRECTOR_TOOL_DEFINITIONS, DIRECTOR_TOOL_NAMES } from "../../world/tools/director_tools.ts";
-import { EVENT_TOOL_DEFINITIONS, EVENT_TOOL_NAMES } from "../../world/tools/event_tools.ts";
 
 interface GenericToolSchema {
 	type: string;
@@ -29,30 +19,10 @@ interface GenericToolSchema {
 
 describe("Tool Schema Validation", () => {
 
-	const allAssistantTools: GenericToolSchema[] = [
-		PROPOSE_WORLD_MODIFICATION_TOOL,
-		PROPOSE_UNIVERSE_MODIFICATION_TOOL,
-		PROPOSE_CHARACTER_MODIFICATION_TOOL,
-		PROPOSE_LORE_MODIFICATION_TOOL,
-		PROPOSE_PROMPT_MODIFICATION_TOOL,
-	];
+	const allAssistantTools: GenericToolSchema[] = ALL_ASSISTANT_TOOLS as unknown as GenericToolSchema[];
 
-	const allChatTools: GenericToolSchema[] = [
-		...STATE_TOOL_DEFINITIONS,
-		...CHARACTER_TOOL_DEFINITIONS,
-		...LORE_TOOL_DEFINITIONS,
-		...EVENT_TOOL_DEFINITIONS,
-		...CHAPTER_TOOL_DEFINITIONS,
-		...DIRECTOR_TOOL_DEFINITIONS,
-	];
-
-	const allTools: GenericToolSchema[] = [
-		...allAssistantTools,
-		...allChatTools,
-	];
-
-	it("verifies every tool specifies type: function", () => {
-		for (const tool of allTools) {
+	it("verifies every assistant tool specifies type: function", () => {
+		for (const tool of allAssistantTools) {
 			assert.strictEqual(
 				tool.type,
 				"function",
@@ -61,8 +31,8 @@ describe("Tool Schema Validation", () => {
 		}
 	});
 
-	it("verifies every tool has a valid function object and non-empty name", () => {
-		for (const tool of allTools) {
+	it("verifies every assistant tool has a valid function object and non-empty name", () => {
+		for (const tool of allAssistantTools) {
 			assert.ok(tool.function, "Tool must have a function property");
 			assert.ok(
 				typeof tool.function.name === "string" && tool.function.name.trim().length > 0,
@@ -75,8 +45,8 @@ describe("Tool Schema Validation", () => {
 		}
 	});
 
-	it("verifies parameters schema format for every tool", () => {
-		for (const tool of allTools) {
+	it("verifies parameters schema format for every assistant tool", () => {
+		for (const tool of allAssistantTools) {
 			const params = tool.function.parameters;
 			if (!params) {
 				continue;
@@ -110,38 +80,6 @@ describe("Tool Schema Validation", () => {
 					);
 				}
 			}
-		}
-	});
-
-	it("verifies tool names match their respective exported tool name sets", () => {
-		for (const tool of STATE_TOOL_DEFINITIONS) {
-			assert.ok(STATE_TOOL_NAMES.has(tool.function.name));
-		}
-		for (const tool of CHARACTER_TOOL_DEFINITIONS) {
-			assert.ok(CHARACTER_TOOL_NAMES.has(tool.function.name));
-		}
-		for (const tool of LORE_TOOL_DEFINITIONS) {
-			assert.ok(LORE_TOOL_NAMES.has(tool.function.name));
-		}
-		for (const tool of EVENT_TOOL_DEFINITIONS) {
-			assert.ok(EVENT_TOOL_NAMES.has(tool.function.name));
-		}
-		for (const tool of CHAPTER_TOOL_DEFINITIONS) {
-			assert.ok(CHAPTER_TOOL_NAMES.has(tool.function.name));
-		}
-		for (const tool of DIRECTOR_TOOL_DEFINITIONS) {
-			assert.ok(DIRECTOR_TOOL_NAMES.has(tool.function.name));
-		}
-	});
-
-	it("verifies all chat tool names are unique", () => {
-		const names = new Set<string>();
-		for (const tool of allChatTools) {
-			assert.ok(
-				!names.has(tool.function.name),
-				`Duplicate chat tool name detected: ${tool.function.name}`,
-			);
-			names.add(tool.function.name);
 		}
 	});
 

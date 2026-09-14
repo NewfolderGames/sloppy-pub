@@ -381,7 +381,16 @@ export class CharacterStateStore {
 		operations: CharacterOperation[],
 	): CharacterMutationResult {
 
-		const instance = this.findInternalInstance(identifier);
+		let instance: CharacterInstance;
+		try {
+			instance = this.findInternalInstance(identifier);
+		}
+		catch (error) {
+			return {
+				status: "error",
+				message: error instanceof Error ? error.message : `Character instance "${identifier}" not found.`,
+			};
+		}
 
 		if (!Array.isArray(operations)) {
 			return {

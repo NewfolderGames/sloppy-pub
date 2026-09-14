@@ -4,7 +4,6 @@ import { getMatchingLoreEntries, synthesizeLorePrompt } from "./builder.ts";
 import { addLoreEntry, deleteLoreBook, getActiveLoreEntries, getAllLoreBooks, getLoreBook, importLorebookFromToml, removeLoreEntry, saveLoreBook, updateLoreEntry } from "./registry.ts";
 import { parseLorebook, serializeLorebook } from "./toml.ts";
 import type { LoreBook, LoreEntry } from "./types.ts";
-import { ADD_LORE_ENTRY_TOOL, executeLoreTool, LIST_LORE_ENTRIES_TOOL, LORE_TOOL_DEFINITIONS, REMOVE_LORE_ENTRY_TOOL, UPDATE_LORE_ENTRY_TOOL } from "./tools.ts";
 
 // Clear the in-memory storage between tests
 
@@ -534,125 +533,6 @@ describe("Lore Builder", () => {
 		assert.equal(entries[0].id, "dynamic_dragon");
 		assert.equal(entries[1].id, "dynamic_cave");
 		assert.equal(entries[2].id, "static_1");
-	});
-
-});
-
-describe("Lore Tools", () => {
-
-	beforeEach(() => {
-		clearLoreMemory();
-	});
-
-	it("exports all tool definitions", () => {
-		assert.equal(LORE_TOOL_DEFINITIONS.length, 4);
-		assert.equal(LORE_TOOL_DEFINITIONS[0], ADD_LORE_ENTRY_TOOL);
-		assert.equal(LORE_TOOL_DEFINITIONS[1], UPDATE_LORE_ENTRY_TOOL);
-		assert.equal(LORE_TOOL_DEFINITIONS[2], REMOVE_LORE_ENTRY_TOOL);
-		assert.equal(LORE_TOOL_DEFINITIONS[3], LIST_LORE_ENTRIES_TOOL);
-	});
-
-	it("ADD_LORE_ENTRY_TOOL has correct name and required fields", () => {
-		const func = ADD_LORE_ENTRY_TOOL.function;
-
-		assert.equal(func.name, "add_lore_entry");
-		assert.deepEqual(func.parameters.required, ["lorebookId", "title", "content"]);
-	});
-
-	it("executeLoreTool: add_lore_entry succeeds", () => {
-		const simpleBook: LoreBook = { id: "test_tools", name: "Tools Test", entries: [] };
-
-		saveLoreBook(simpleBook, "test_tools");
-
-		const result = executeLoreTool("add_lore_entry", {
-			lorebookId: "test_tools",
-			title: "Tool Entry",
-			content: "Created by tool",
-			keywords: ["tool", "test"],
-			activationMode: "dynamic",
-			priority: 3,
-		});
-
-		assert.equal(result.status, "success");
-		assert.ok(result.entry);
-		assert.equal(result.entry!.title, "Tool Entry");
-		assert.equal(result.entry!.activationMode, "dynamic");
-
-		const retrieved = getLoreBook("test_tools");
-
-		assert.equal(retrieved!.lorebook.entries.length, 1);
-	});
-
-	it("executeLoreTool: add_lore_entry fails with missing fields", () => {
-		const result = executeLoreTool("add_lore_entry", {
-			lorebookId: "test",
-		});
-
-		assert.equal(result.status, "error");
-	});
-
-	it("executeLoreTool: update_lore_entry succeeds", () => {
-		const book = makeSampleLoreBook();
-
-		saveLoreBook(book, "test_book");
-
-		const result = executeLoreTool("update_lore_entry", {
-			lorebookId: "test_book",
-			entryId: "static_1",
-			title: "Updated By Tool",
-		});
-
-		assert.equal(result.status, "success");
-
-		const retrieved = getLoreBook("test_book");
-		const entry = retrieved!.lorebook.entries.find(e => e.id === "static_1");
-
-		assert.equal(entry!.title, "Updated By Tool");
-	});
-
-	it("executeLoreTool: remove_lore_entry succeeds", () => {
-		const book = makeSampleLoreBook();
-
-		saveLoreBook(book, "test_book");
-
-		const result = executeLoreTool("remove_lore_entry", {
-			lorebookId: "test_book",
-			entryId: "static_1",
-		});
-
-		assert.equal(result.status, "success");
-
-		const retrieved = getLoreBook("test_book");
-
-		assert.equal(retrieved!.lorebook.entries.length, 4);
-	});
-
-	it("executeLoreTool: list_lore_entries succeeds", () => {
-		const book = makeSampleLoreBook();
-
-		saveLoreBook(book, "test_book");
-
-		const result = executeLoreTool("list_lore_entries", {
-			lorebookId: "test_book",
-		});
-
-		assert.equal(result.status, "success");
-		assert.equal(result.entries!.length, 5);
-	});
-
-	it("executeLoreTool: list_lore_entries fails for non-existent book", () => {
-		const result = executeLoreTool("list_lore_entries", {
-			lorebookId: "nonexistent",
-		});
-
-		assert.equal(result.status, "error");
-	});
-
-	it("executeLoreTool: returns error for unknown tool", () => {
-		const result = executeLoreTool("unknown_tool", {});
-
-		assert.equal(result.status, "error");
-		assert.ok(result.message!.includes("Unknown"));
 	});
 
 });

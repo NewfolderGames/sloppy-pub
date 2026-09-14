@@ -6,12 +6,13 @@ LLM Roleplay Project inspired by Silly Tavern.
 
 ## System Overview
 
-This application provides a container-inspired environment for roleplay chat with Large Language Models.
-The architecture adapts container virtualization concepts to narrative generation and state tracking.
-World templates declare narrative rules, parameters, and initial states.
+This application provides an interactive narrative engine for roleplay chat with Large Language Models.
+The architecture adapts container virtualization concepts to narrative generation, game mechanics, and state tracking.
+World templates declare narrative rules, parameters, initial states, and semantic blueprints.
 Frozen world templates instantiate isolated or synchronized chat sessions.
 Universe instances coordinate shared lore and states across multiple concurrent sessions.
 Local reactive state stores record narrative changes and rollback states across branching message trees.
+Chat instances parse streaming XML commands for low-latency state mutations and decision cards.
 
 ## Features and Mechanics
 
@@ -19,17 +20,49 @@ Local reactive state stores record narrative changes and rollback states across 
 
 The world system manages environmental settings, narrative rules, and dynamic world states.
 Authors declare worlds using worldfile templates.
-Each worldfile defines metadata, compile-time arguments, runtime variables, narrative content, and initial states.
+Each worldfile defines metadata, compile-time arguments, runtime variables, narrative content, initial states, and semantic blueprints.
 Compile-time arguments bake fixed parameters into world descriptions at build time.
 Runtime variables inject configurable values when a user creates a new world session.
 Narrative content includes background stories, setting descriptions, guidelines, plot intros, and narrative incidents.
 
 World instances represent active chat sessions created from world templates.
 Each instance maintains an isolated state store, a message tree, and session metadata.
-The reactive state store tracks key-value pairs with primitive and array values.
-Large Language Model tool calls mutate states during conversation turns.
-Available state operations include set, delete, patch, mutate, and read actions.
+The reactive state store tracks arbitrary key-value pairs as a baseline.
+Semantic state blueprints build on this baseline to enforce structured progression rules.
 Every state mutation creates a state change event and saves a state snapshot.
+
+### Semantic State Architecture
+
+The semantic state architecture decouples raw numeric values from narrative directives sent to the model.
+Raw values track metrics, while mapped directives enforce explicit behavioral boundaries and permitted actions.
+The system implements three formal blueprint archetypes on top of the baseline key-value store.
+Authors declare these blueprints in world and character templates to create consistent game progression.
+
+Archetype A defines bounded gauges with non-overlapping numerical tiers.
+Gauges track continuous progression metrics such as affection, sanity, corruption, and energy.
+Each gauge specifies minimum limits, maximum limits, a default value, and a maximum delta per turn.
+The per-turn delta clamp prevents unearned or sudden attribute jumps.
+Each tier defines a display label, a behavioral directive for the model, and threshold transition events.
+Crossing a tier threshold executes registered on-enter and on-exit actions.
+
+Archetype B defines finite state machines for discrete relational or world phases.
+Finite state machines track conditions such as relationship status, combat posture, and world seasons.
+Each machine defines an initial state and an explicit transition graph of permitted target states.
+Transition guards verify prerequisite conditions before allowing state changes.
+Prerequisites include required gauge thresholds, inventory items, or active flags.
+Active states inject specific behavioral directives and narrative constraints into the model context.
+
+Archetype C defines qualitative flags and item inventories.
+Flags track discrete boolean achievements, story milestones, and discovered secrets.
+Inventories record collected items and equipment identifiers.
+Gating conditions check active flags and items to enable or disable choices in the conversation.
+These conditions also unlock alternate narrative paths and trigger specialized world events.
+
+State mutation follows a strict validation pipeline.
+The system receives proposed state deltas from streaming XML commands or plugin scripts.
+The validation engine clamps numerical deltas to configured limits and verifies transition guards.
+The engine detects tier boundary crossings and updates active behavioral directives.
+Finally, the store updates state records, dispatches lifecycle events, and saves snapshot records.
 
 ### Universe System
 
@@ -50,13 +83,13 @@ Users can inspect and edit universe templates using structured forms or raw text
 The character system manages personas and entities that interact within the narrative world.
 Authors configure character profiles using characterfile templates.
 Character templates define metadata, summary, physical characteristics, linguistic patterns, psychology, desires, skills, backgrounds, and example dialogues.
-Initial character states specify starting key-value attributes for character instances.
+Initial character states specify starting attributes, gauges, state machines, and inventory flags.
 The system supports two distinct character types during runtime sessions.
 
 Actor characters instantiate directly from persistent character templates.
 Non-player characters generate dynamically during conversations to satisfy immediate narrative requirements.
 Each character instance tracks active thoughts, emotional states, narrative goals, and personal states.
-Large Language Model tools mutate character states, read character profiles, and create non-player characters at runtime.
+Streaming XML commands mutate character attributes, update relationship gauges, and transition character states.
 Users can manage character templates through form controls or raw text editors.
 
 ### Lore System
@@ -68,7 +101,6 @@ The system supports static activation mode and dynamic activation mode.
 
 Static lore entries remain active continuously and inject into every session prompt assembly.
 Dynamic lore entries activate only when recent messages or context match declared keywords.
-Runtime lore tools allow the model to list, insert, update, and remove lore entries during conversation.
 The lore manager view provides filtering, entry inspection, and text editing tools.
 
 ### Chat and Message Tree System
@@ -83,32 +115,39 @@ Each message node captures a snapshot of active world states at turn completion.
 When a user switches between tree branches, the system restores the exact state snapshot of the target node.
 Streaming communication uses Server-Sent Events from OpenAI-compatible endpoints.
 The interface tracks generation duration and token consumption metrics.
-Structured choice blocks parse into interactive choice buttons for rapid user turn submission.
 A collapsible reasoning view displays model thinking text separately from the main response.
 
-Chat sessions support autonomous tool calling for world states, character mutations, lore, events, chapters, and director plans.
-Completion requests send tools with automatic tool choice and omit schema constraints to prevent output restrictions.
-When the model invokes tools, the session executes the operations and updates the corresponding stores.
-The session appends tool results to the message tree and sends a follow-up completion request.
-This multi-turn loop continues until the model generates dialogue or transfers turn control.
+Chat instances use inline XML tags for function and command calling.
+The model embeds command tags alongside dialogue during generation.
+Supported commands include state update tags, event log tags, director tags, chapter tags, and choice tags.
+
+The streaming parser intercepts and extracts XML command tags in real time.
+The interface strips command tags from the message bubble to display clean narrative prose.
+Extracted state tags apply mutations to the reactive state store without follow-up requests.
+Choice tags parse into interactive decision cards with requirement metadata for rapid player input.
 
 ### World Info Drawer and Inspection
 
 The chat workspace provides a slide-over world info drawer for active session inspection.
-Users can open the drawer through the chat header button or the button at the bottom right of the chat input.
+Users can open the drawer through the chat header button or the input action bar.
+The drawer serves as the primary visual display for active session states.
 The drawer organizes information into independent collapsible sections.
-Collapsible sections include world metadata, full world prompt, universe background and laws, and character profiles.
+Collapsible sections include world metadata, full world prompt, universe background, and character profiles.
 The drawer displays active lore entries resolved from attached lorebooks and the latest turn context.
+
 The event logs section displays chronological session events with event type badges and timestamps.
 The chapters section lists persistent story summaries and associated event counts.
-The live state section provides real-time state variable tables with text filtering.
+The live state section displays real-time state tables with text filtering.
+This section inspects baseline key-value variables, active gauge meters, tier labels, and state machine values.
+Future interface additions can render extra HUD views, while the drawer provides the immediate complete view.
 
 ### Session Management and Compaction
 
 Session management tracks the lifecycle of active roleplay instances.
 Session events record chronological narrative milestones, character actions, and system updates.
-Models and users can record events through dedicated event tools.
+Models and users record events through inline event tags or interface controls.
 Chapter checkpoints summarize recent events and dialogue turns into persistent story summaries.
+Models record chapter checkpoints through inline chapter tags or compaction controls.
 Chapters preserve long-term continuity without overloading context windows.
 
 Session compaction creates a permanent chapter summary and clears the active message tree.
@@ -123,7 +162,7 @@ The director monitors narrative pacing, world rule compliance, and dramatic tens
 The agent maintains hidden internal thoughts, strategic plans, and steering instructions.
 These internal thoughts and plans remain hidden from user-facing conversation turns.
 
-The director uses dedicated tools to record thoughts, update plans, and steer narrative focus.
+The director records thoughts and updates plans through inline XML director tags during generation.
 When enabled, the prompt pipeline injects director guideline instructions into the system prompt.
 The director steers the conversation without breaking character immersion.
 
@@ -159,6 +198,19 @@ Users can add custom prompt blocks with user-defined names and content.
 Eligible system and user prompts support configurable message roles including system, user, and assistant.
 A separate assistance prompt registry manages prompts for the co-author assistant panel.
 The settings view provides drag-and-drop reordering, role selection, and prompt toggles.
+
+### Plugin Host Architecture
+
+The application provides a reactive plugin host architecture for external scripts and story modules.
+The plugin host connects custom scripts to the central reactive store without causing component render desyncs.
+External modules register with the host to monitor session events and automate state changes.
+The host architecture operates through three primary subsystems.
+
+The state management subsystem allows plugins to query values, propose state deltas, and retrieve active tier directives.
+The event dispatcher subsystem allows plugins to publish and subscribe to lifecycle hooks.
+Lifecycle hooks run at initialization, turn start, turn end, state changes, and choice selections.
+The plugin registry subsystem manages plugin installation, dependency resolution, and runtime deregistration.
+Plugins can implement custom game rules, milestone detectors, and narrative mechanics through this bridge.
 
 ### Module Packaging and Serialization
 
@@ -221,7 +273,7 @@ User interface components reside in `src/components/`.
 ### Shared Core Modules
 
 Core business logic, state management, and services reside in `src/shared/`.
-`src/shared/ai/` provides model communication clients, message tree structures, assistance schemas, and diff tools.
+`src/shared/ai/` provides model communication clients, message tree structures, XML command parsers, assistance schemas, and diff tools.
 `src/shared/world/` implements world template serialization, state stores, state tools, and session runners.
 `src/shared/universe/` implements the universe coordinator and real-time state channels.
 `src/shared/character/` implements character registries, state stores, and character prompt builders.
@@ -229,5 +281,6 @@ Core business logic, state management, and services reside in `src/shared/`.
 `src/shared/session/` implements director state tracking, chapter checkpoints, and session compaction.
 `src/shared/settings/` implements prompt registries, definitions, formatters, and persistence hooks.
 `src/shared/wizard/` implements creation wizard prompt generators and template creation tools.
+`src/shared/plugin/` implements plugin registries, lifecycle hooks, and host API bridges.
 `src/shared/toml/` implements multiline-preserving TOML serialization and formatting.
 `src/shared/io/` implements zip archive creation, module export, and collision detection.

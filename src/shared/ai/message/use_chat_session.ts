@@ -8,27 +8,14 @@ import { formatTurnInstruction, parseRoleplayResponse, stripCommandTags } from "
 import { useMessageTree } from "./use_message_tree.ts";
 import { getCharacterfile } from "../../character/registry.ts";
 import { CharacterStateStore } from "../../character/state_store.ts";
-import { CHARACTER_TOOL_DEFINITIONS } from "../../character/tools.ts";
 import type { Characterfile } from "../../character/types.ts";
-import { LORE_TOOL_DEFINITIONS } from "../../lore/tools.ts";
 import { assembleChatPromptMessages } from "../../settings/prompt_registry.ts";
 import { resolveSessionLorebookIds } from "./session_lorebooks.ts";
 import { createInstanceSession, type InstanceSession, saveInstance } from "../../world/instance_manager.ts";
-import { STATE_TOOL_DEFINITIONS } from "../../world/state_store.ts";
-import { addSessionEvent, EVENT_TOOL_DEFINITIONS } from "../../world/tools/event_tools.ts";
-import { addChapter, CHAPTER_TOOL_DEFINITIONS } from "../../world/tools/chapter_tools.ts";
-import { DIRECTOR_TOOL_DEFINITIONS } from "../../world/tools/director_tools.ts";
+import { addSessionEvent } from "../../world/tools/event_tools.ts";
+import { addChapter } from "../../world/tools/chapter_tools.ts";
 import { updateDirectorPlan, updateDirectorThought } from "../../session/director.ts";
 import type { WorldInstance, WorldStates } from "../../world/types.ts";
-
-export const ALL_CHAT_TOOLS = [
-	...STATE_TOOL_DEFINITIONS,
-	...CHARACTER_TOOL_DEFINITIONS,
-	...LORE_TOOL_DEFINITIONS,
-	...EVENT_TOOL_DEFINITIONS,
-	...CHAPTER_TOOL_DEFINITIONS,
-	...DIRECTOR_TOOL_DEFINITIONS,
-];
 
 export interface RunChatStreamOptions {
 	session: InstanceSession;

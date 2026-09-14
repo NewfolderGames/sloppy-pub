@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { getInstance } from "../instance_manager.ts";
 import type { WorldInstance } from "../types.ts";
-import { addSessionEvent, executeEventTool, listSessionEvents } from "./event_tools.ts";
+import { addSessionEvent, listSessionEvents } from "./event_tools.ts";
 
 function createTestInstance(id: string): WorldInstance {
 	const now = Date.now();
@@ -47,31 +47,5 @@ describe("Session Event Tools", () => {
 			listSessionEvents(instance, { type: "narrative", limit: 1 }).map(event => event.summary),
 			["Second narrative"],
 		);
-	});
-
-	it("executes event tools and rejects invalid add arguments", () => {
-		const instance = createTestInstance(`event-dispatch-${Date.now()}`);
-
-		const invalid = executeEventTool("add_session_event", {
-			type: "unknown",
-			summary: "Invalid",
-		}, instance);
-
-		assert.equal(invalid.status, "error");
-		assert.equal(instance.events, undefined);
-
-		const added = executeEventTool("add_session_event", {
-			type: "narrative",
-			summary: "A valid event",
-		}, instance);
-
-		assert.equal(added.status, "success");
-		assert.equal(added.event?.summary, "A valid event");
-
-		const listed = executeEventTool("list_session_events", { limit: 1 }, instance);
-
-		assert.equal(listed.status, "success");
-		assert.equal(listed.count, 1);
-		assert.equal(listed.events?.[0].summary, "A valid event");
 	});
 });
