@@ -1,5 +1,32 @@
-import type { WorldStates } from "../../world/types.ts";
+import type { StateValue, WorldStates } from "../../world/types.ts";
 import type { Message } from "./node.ts";
+
+export interface StateCommand {
+	key: string;
+	value: StateValue;
+	op?: "set" | "delete";
+	character?: string;
+	category?: "thought" | "emotion" | "goal" | "state";
+	name?: string;
+}
+
+export interface EventCommand {
+	type: "narrative" | "character" | "system";
+	summary: string;
+	details?: string;
+}
+
+export interface DirectorCommand {
+	thought?: string;
+	plan?: string;
+	instructions?: string;
+}
+
+export interface ParsedCommands {
+	states: StateCommand[];
+	events: EventCommand[];
+	director?: DirectorCommand;
+}
 
 export interface CharacterBlock {
 	type: "character";
@@ -56,6 +83,7 @@ export type TurnAction = CharacterTurnAction | SystemTurnAction | UserTurnAction
 export interface ParsedMessage {
 	blocks: MessageBlock[];
 	nextTurn?: TurnAction;
+	commands?: ParsedCommands;
 }
 
 export interface MessageNode {

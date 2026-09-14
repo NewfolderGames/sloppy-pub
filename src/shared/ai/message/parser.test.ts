@@ -1,6 +1,13 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
-import { formatTurnInstruction, parseJsonSchemaResponse, parseRoleplayResponse } from "./parser.ts";
+import {
+	formatTurnInstruction,
+	parseCommands,
+	parseJsonSchemaResponse,
+	parseRoleplayResponse,
+	parseStateValue,
+	stripCommandTags,
+} from "./parser.ts";
 import type { CharacterBlock, ChoiceBlock, SystemBlock } from "./types.ts";
 
 describe("parseRoleplayResponse", () => {
@@ -522,6 +529,238 @@ describe("formatTurnInstruction", () => {
 		assert.strictEqual((result.blocks[0] as CharacterBlock).name, "");
 		assert.strictEqual(result.blocks[0].content, "Narrative content");
 		assert.strictEqual(result.nextTurn, undefined);
+	});
+
+});
+
+describe("XML Command Extraction and Tag Stripping", () => {
+
+	describe("parseStateValue", () => {
+
+		it("parses boolean values", () => {
+			assert.strictEqual(parseStateValue("true"), true);
+			assert.strictEqual(parseStateValue("false"), false);
+		});
+
+		it("parses numeric values", () => {
+			assert.strictEqual(parseStateValue("42"), 42);
+			assert.strictEqual(parseStateValue("-3.14"), -3.14);
+			assert.strictEqual(parseStateValue("0"), 0);
+		});
+
+		it("parses JSON array values", () => {
+			assert.deepStrictEqual(parseStateValue("[1, 2, 3]"), [1, 2, 3]);
+			assert.deepStrictEqual(parseStateValue("[\"apple\", \"banana\"]"), ["apple", "banana"]);
+		});
+
+		it("parses string and quoted string values", () => {
+			assert.strictEqual(parseStateValue("hello world"), "hello world");
+			assert.strictEqual(parseStateValue("\"quoted value\""), "quoted value");
+			assert.strictEqual(parseStateValue("'single quoted'"), "single quoted");
+		});
+
+	});
+
+	describe("parseCommands", () => {
+
+		it("parses standalone state tags with attributes", () => {
+			const input = `<state key="district.alert" value="high" op="set" />`;
+			const result = parseCommands(input);
+
+			assert.strictEqual(result.states.length, 1);
+			assert.strictEqual(result.states[0].key, "district.alert");
+			assert.strictEqual(result.states[0].value, "high");
+			assert.strictEqual(result.states[0].op, "set");
+		});
+
+		it("parses state delete operations", () => {
+			const input = `<state key="temporary.buff" op="delete" />`;
+			const result = parseCommands(input);
+
+			assert.strictEqual(result.states.length, 1);
+			assert.strictEqual(result.states[0].key, "temporary.buff");
+			assert.strictEqual(result.states[0].op, "delete");
+		});
+
+		it("parses character state mutations with category and name", () => {
+			const input = `<state character="Bob" category="emotion" name="fear" value="high" />`;
+			const result = parseCommands(input);
+
+			assert.strictEqual(result.states.length, 1);
+			assert.strictEqual(result.states[0].character, "Bob");
+			assert.strictEqual(result.states[0].category, "emotion");
+			assert.strictEqual(result.states[0].name, "fear");
+			assert.strictEqual(result.states[0].value, "high");
+		});
+
+		it("parses state tags with text content", () => {
+			const input = `<state key="journal.entry">Discovered hidden temple</state>`;
+			const result = parseCommands(input);
+
+			assert.strictEqual(result.states.length, 1);
+			assert.strictEqual(result.states[0].key, "journal.entry");
+			assert.strictEqual(result.states[0].value, "Discovered hidden temple");
+		});
+
+		it("parses event tags with attributes and text content", () => {
+			const input = `<event type="narrative" summary="The storm began" details="Heavy rain poured down" />
+<event type="character" summary="Alice gasped">She saw the shadow move.</event>`;
+			const result = parseCommands(input);
+
+			assert.strictEqual(result.events.length, 2);
+			assert.strictEqual(result.events[0].type, "narrative");
+			assert.strictEqual(result.events[0].summary, "The storm began");
+			assert.strictEqual(result.events[0].details, "Heavy rain poured down");
+
+			assert.strictEqual(result.events[1].type, "character");
+			assert.strictEqual(result.events[1].summary, "Alice gasped");
+			assert.strictEqual(result.events[1].details, "She saw the shadow move.");
+		});
+
+		it("parses director tags with attributes and child tags", () => {
+			const input = `<director thought="Player is hesitating" plan="Introduce danger" instructions="Increase tension" />`;
+			const result = parseCommands(input);
+
+			assert.ok(result.director);
+			assert.strictEqual(result.director?.thought, "Player is hesitating");
+			assert.strictEqual(result.director?.plan, "Introduce danger");
+			assert.strictEqual(result.director?.instructions, "Increase tension");
+		});
+
+		it("merges multiple director tags", () => {
+			const input = `<director thought="Initial thought" />
+<director plan="New plan" />`;
+			const result = parseCommands(input);
+
+			assert.ok(result.director);
+			assert.strictEqual(result.director?.thought, "Initial thought");
+			assert.strictEqual(result.director?.plan, "New plan");
+		});
+
+		it("handles empty and unclosed command tags", () => {
+			const input = `Dialogue text <state key="" value="" /> <state key="flag" value="true"`;
+			const result = parseCommands(input);
+
+			assert.strictEqual(result.states.length, 2);
+			assert.strictEqual(result.states[0].key, "");
+			assert.strictEqual(result.states[1].key, "flag");
+			assert.strictEqual(result.states[1].value, true);
+		});
+
+	});
+
+	describe("stripCommandTags", () => {
+
+		it("strips standalone command tags on own lines without leaving blank lines", () => {
+			const input = `First line.
+<state key="alert" value="high" />
+Second line.`;
+			const result = stripCommandTags(input);
+			assert.strictEqual(result, "First line.\nSecond line.");
+		});
+
+		it("strips inline command tags inside text", () => {
+			const input = `Hello <state key="mood" value="happy" /> world!`;
+			const result = stripCommandTags(input);
+			assert.strictEqual(result, "Hello world!");
+		});
+
+		it("strips unclosed command tag at end of text", () => {
+			const input = `Some narrative <state key="open" value="true"`;
+			const result = stripCommandTags(input);
+			assert.strictEqual(result.trim(), "Some narrative");
+		});
+
+		it("preserves non-command HTML tags", () => {
+			const input = `<div class="card"><b>Warning:</b> <state key="danger" value="high" />Stay back.</div>`;
+			const result = stripCommandTags(input);
+			assert.strictEqual(result, `<div class="card"><b>Warning:</b> Stay back.</div>`);
+		});
+
+	});
+
+	describe("parseRoleplayResponse integration with commands", () => {
+
+		it("extracts state, event, and director commands and strips them from character block", () => {
+			const input = `<director thought="Suspenseful moment" plan="Reveal traitor" />
+<state key="weather" value="stormy" />
+<character id="101" name="Detective">
+The clock struck midnight.
+<state character="Detective" category="thought" name="clue" value="watch stopped at 12" />
+<event type="narrative" summary="Lightning flashed outside." />
+Someone entered the room.
+</character>`;
+
+			const result = parseRoleplayResponse(input);
+
+			assert.ok(result.commands);
+			assert.strictEqual(result.commands?.states.length, 2);
+			assert.strictEqual(result.commands?.states[0].key, "weather");
+			assert.strictEqual(result.commands?.states[0].value, "stormy");
+			assert.strictEqual(result.commands?.states[1].character, "Detective");
+			assert.strictEqual(result.commands?.states[1].category, "thought");
+			assert.strictEqual(result.commands?.states[1].value, "watch stopped at 12");
+
+			assert.strictEqual(result.commands?.events.length, 1);
+			assert.strictEqual(result.commands?.events[0].type, "narrative");
+			assert.strictEqual(result.commands?.events[0].summary, "Lightning flashed outside.");
+
+			assert.strictEqual(result.commands?.director?.thought, "Suspenseful moment");
+			assert.strictEqual(result.commands?.director?.plan, "Reveal traitor");
+
+			assert.strictEqual(result.blocks.length, 1);
+			const block = result.blocks[0] as CharacterBlock;
+			assert.strictEqual(block.id, "101");
+			assert.strictEqual(block.name, "Detective");
+			assert.strictEqual(
+				block.content,
+				"The clock struck midnight.\nSomeone entered the room.",
+			);
+		});
+
+		it("handles mixed dialogue with multiple inline commands", () => {
+			const input = `<character id="202" name="Merchant">
+Welcome traveler!
+<state key="merchant.greeting" value="true" />
+<state key="gold" value="100" />
+Take a look at my wares.
+</character>`;
+
+			const result = parseRoleplayResponse(input);
+
+			assert.ok(result.commands);
+			assert.strictEqual(result.commands?.states.length, 2);
+			assert.strictEqual(result.blocks.length, 1);
+			const block = result.blocks[0] as CharacterBlock;
+			assert.strictEqual(
+				block.content,
+				"Welcome traveler!\nTake a look at my wares.",
+			);
+		});
+
+		it("handles JSON schema responses containing inline command tags", () => {
+			const input = JSON.stringify({
+				blocks: [
+					{
+						type: "character",
+						id: "hero",
+						name: "Hero",
+						content: "I made it.\n<state key=\"quest.done\" value=\"true\" />\nTime to rest.",
+					},
+				],
+			});
+
+			const result = parseRoleplayResponse(input);
+
+			assert.ok(result.commands);
+			assert.strictEqual(result.commands?.states.length, 1);
+			assert.strictEqual(result.commands?.states[0].key, "quest.done");
+			assert.strictEqual(result.commands?.states[0].value, true);
+
+			assert.strictEqual(result.blocks.length, 1);
+			assert.strictEqual(result.blocks[0].content, "I made it.\nTime to rest.");
+		});
+
 	});
 
 });
