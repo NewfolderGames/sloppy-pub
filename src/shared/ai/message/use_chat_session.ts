@@ -3,21 +3,22 @@ import { OpenAIClient } from "../llm/client.ts";
 import type { ChatCompletionMessageParam } from "../llm/common.ts";
 import type { ChatCompletionChunk } from "../llm/response.ts";
 import type { ChatCompletionRequest } from "../llm/request.ts";
-import { calculateMessageTokens, chunksToMessage, type Message, type MessageDataAssistant } from "./node.ts";
-import { formatTurnInstruction, parseRoleplayResponse } from "./parser.ts";
+import { calculateMessageTokens, chunksToMessage, type Message } from "./node.ts";
+import { formatTurnInstruction, parseRoleplayResponse, stripCommandTags } from "./parser.ts";
 import { useMessageTree } from "./use_message_tree.ts";
 import { getCharacterfile } from "../../character/registry.ts";
 import { CharacterStateStore } from "../../character/state_store.ts";
-import { CHARACTER_TOOL_DEFINITIONS, CHARACTER_TOOL_NAMES, executeCharacterTool } from "../../character/tools.ts";
+import { CHARACTER_TOOL_DEFINITIONS } from "../../character/tools.ts";
 import type { Characterfile } from "../../character/types.ts";
-import { executeLoreTool, LORE_TOOL_DEFINITIONS, LORE_TOOL_NAMES } from "../../lore/tools.ts";
+import { LORE_TOOL_DEFINITIONS } from "../../lore/tools.ts";
 import { assembleChatPromptMessages } from "../../settings/prompt_registry.ts";
 import { resolveSessionLorebookIds } from "./session_lorebooks.ts";
-import { createInstanceSession, type InstanceSession } from "../../world/instance_manager.ts";
-import { executeStateTool, STATE_TOOL_DEFINITIONS, STATE_TOOL_NAMES } from "../../world/state_store.ts";
-import { EVENT_TOOL_DEFINITIONS, EVENT_TOOL_NAMES, executeEventTool } from "../../world/tools/event_tools.ts";
-import { CHAPTER_TOOL_DEFINITIONS, CHAPTER_TOOL_NAMES, executeChapterTool } from "../../world/tools/chapter_tools.ts";
-import { DIRECTOR_TOOL_DEFINITIONS, DIRECTOR_TOOL_NAMES, executeDirectorTool } from "../../world/tools/director_tools.ts";
+import { createInstanceSession, type InstanceSession, saveInstance } from "../../world/instance_manager.ts";
+import { STATE_TOOL_DEFINITIONS } from "../../world/state_store.ts";
+import { addSessionEvent, EVENT_TOOL_DEFINITIONS } from "../../world/tools/event_tools.ts";
+import { CHAPTER_TOOL_DEFINITIONS } from "../../world/tools/chapter_tools.ts";
+import { DIRECTOR_TOOL_DEFINITIONS } from "../../world/tools/director_tools.ts";
+import { updateDirectorPlan, updateDirectorThought } from "../../session/director.ts";
 import type { WorldInstance, WorldStates } from "../../world/types.ts";
 
 export const ALL_CHAT_TOOLS = [
@@ -95,8 +96,6 @@ export async function runChatStream(options: RunChatStreamOptions): Promise<void
 			messages: params,
 			stream: true,
 			stream_options: { include_usage: true },
-			tools: ALL_CHAT_TOOLS,
-			tool_choice: "auto",
 		};
 
 		const api = client.streamChatCompletion(endpoint, apiKey, requestPayload);
@@ -175,83 +174,156 @@ export async function runChatStream(options: RunChatStreamOptions): Promise<void
 
 		onChunk?.([]);
 
-		const currentSnapshot = session.stateStore.getAllStates();
-		session.treeManager.addMessage(chunkMessage, undefined, currentSnapshot);
+		const rawContent = chunkMessage.data.content;
+		const parsed = parseRoleplayResponse(rawContent);
 
-		// Execute Tool Calls if Present
-		const assistantToolCalls = (chunkMessage.data as MessageDataAssistant).tool_calls;
+		// Apply Extracted XML Commands
+		if (parsed.commands) {
 
-		if (assistantToolCalls && assistantToolCalls.length > 0) {
+			if (parsed.commands.states && parsed.commands.states.length > 0) {
 
-			for (const tc of assistantToolCalls) {
-				let parsedArgs: unknown = {};
+				for (const stateCmd of parsed.commands.states) {
 
-				try {
-					if (tc.function.arguments) {
-						parsedArgs = JSON.parse(tc.function.arguments);
+					if (stateCmd.character) {
+
+						if (session.characterStore) {
+
+							const category = stateCmd.category ?? "state";
+
+							if (category === "thought") {
+
+								if (stateCmd.op === "delete") {
+									session.characterStore.deleteThought(
+										stateCmd.character,
+										stateCmd.name || stateCmd.key,
+									);
+								}
+								else {
+									session.characterStore.setThought(stateCmd.character, {
+										title: stateCmd.name || stateCmd.key || "Recent Thought",
+										internal_monologue:
+											typeof stateCmd.value === "string"
+												? stateCmd.value
+												: String(stateCmd.value),
+									});
+								}
+
+							}
+							else if (category === "emotion") {
+
+								if (stateCmd.op === "delete") {
+									session.characterStore.deleteEmotion(
+										stateCmd.character,
+										stateCmd.name || stateCmd.key,
+									);
+								}
+								else {
+									session.characterStore.setEmotion(stateCmd.character, {
+										name: stateCmd.name || stateCmd.key || "Recent Emotion",
+										internal_monologue:
+											typeof stateCmd.value === "string"
+												? stateCmd.value
+												: String(stateCmd.value),
+									});
+								}
+
+							}
+							else if (category === "goal") {
+
+								if (stateCmd.op === "delete") {
+									session.characterStore.deleteGoal(
+										stateCmd.character,
+										stateCmd.name || stateCmd.key,
+									);
+								}
+								else {
+									session.characterStore.setGoal(stateCmd.character, {
+										name: stateCmd.name || stateCmd.key || "Goal",
+										internal_monologue:
+											typeof stateCmd.value === "string"
+												? stateCmd.value
+												: String(stateCmd.value),
+									});
+								}
+
+							}
+							else {
+
+								if (stateCmd.op === "delete") {
+									session.characterStore.deleteState(
+										stateCmd.character,
+										stateCmd.key || stateCmd.name || "",
+									);
+								}
+								else {
+									session.characterStore.setState(
+										stateCmd.character,
+										stateCmd.key || stateCmd.name || "",
+										stateCmd.value,
+									);
+								}
+
+							}
+
+						}
+
 					}
-				}
-				catch {
-					parsedArgs = {};
-				}
+					else if (stateCmd.key && session.stateStore) {
 
-				let toolResult: unknown;
+						if (stateCmd.op === "delete") {
+							session.stateStore.deleteState(stateCmd.key);
+						}
+						else {
+							session.stateStore.setState(stateCmd.key, stateCmd.value);
+						}
 
-				if (LORE_TOOL_NAMES.has(tc.function.name)) {
-					const effectiveLorebookId = session.instance.lorebookId ?? session.lorebookId;
-
-					if (
-						effectiveLorebookId
-						&& typeof parsedArgs === "object"
-						&& parsedArgs !== null
-						&& !("lorebookId" in parsedArgs)
-					) {
-						(parsedArgs as Record<string, unknown>).lorebookId = effectiveLorebookId;
 					}
 
-					toolResult = executeLoreTool(tc.function.name, parsedArgs);
-				}
-				else if (CHARACTER_TOOL_NAMES.has(tc.function.name)) {
-					toolResult = executeCharacterTool(tc.function.name, parsedArgs, session.characterStore);
-				}
-				else if (EVENT_TOOL_NAMES.has(tc.function.name)) {
-					toolResult = executeEventTool(tc.function.name, parsedArgs, session.instance);
-				}
-				else if (CHAPTER_TOOL_NAMES.has(tc.function.name)) {
-					toolResult = executeChapterTool(tc.function.name, parsedArgs, session.instance, session.treeManager);
-				}
-				else if (DIRECTOR_TOOL_NAMES.has(tc.function.name)) {
-					toolResult = executeDirectorTool(tc.function.name, parsedArgs, session.director, session.instance);
-				}
-				else if (STATE_TOOL_NAMES.has(tc.function.name)) {
-					toolResult = executeStateTool(tc.function.name, parsedArgs, session.stateStore);
-				}
-				else {
-					toolResult = {
-						status: "error",
-						message: `Unknown tool: ${tc.function.name}`,
-					};
 				}
 
-				const updatedSnapshot = session.stateStore.getAllStates();
-
-				session.treeManager.appendMessage("tool", JSON.stringify(toolResult), {
-					isRequest: true,
-					finishReason: "app",
-					stateSnapshot: updatedSnapshot,
-					tool_call_id: tc.id,
-				});
 			}
 
-			currentAdditionalMessages = [];
-			continue;
+			if (parsed.commands.events && parsed.commands.events.length > 0) {
+
+				for (const eventCmd of parsed.commands.events) {
+					addSessionEvent(session.instance, {
+						type: eventCmd.type,
+						summary: eventCmd.summary,
+						details: eventCmd.details,
+					});
+				}
+
+			}
+
+			if (parsed.commands.director && session.director) {
+
+				if (parsed.commands.director.thought) {
+					updateDirectorThought(session.director, parsed.commands.director.thought);
+				}
+
+				if (parsed.commands.director.plan) {
+					updateDirectorPlan(session.director, parsed.commands.director.plan);
+				}
+
+				if (parsed.commands.director.instructions) {
+					session.director.instructions = parsed.commands.director.instructions.trim();
+				}
+
+				saveInstance(session.instance);
+
+			}
 
 		}
 
-		// Turn Passing Check
-		const parsed = parseRoleplayResponse(chunkMessage.data.content);
+		// Save Sanitized Narrative Text Without Command Tags
+		chunkMessage.data.content = stripCommandTags(rawContent);
 
+		const updatedSnapshot = session.stateStore.getAllStates();
+		session.treeManager.addMessage(chunkMessage, undefined, updatedSnapshot);
+
+		// Turn Passing Check
 		if (parsed.nextTurn && parsed.nextTurn.type !== "user") {
+
 			const turnInstruction = formatTurnInstruction(parsed.nextTurn);
 
 			session.treeManager.appendMessage("user", `<character id="APP">${turnInstruction}</character>`, {
@@ -261,6 +333,7 @@ export async function runChatStream(options: RunChatStreamOptions): Promise<void
 			});
 
 			currentAdditionalMessages = [];
+
 		}
 		else {
 			break;
