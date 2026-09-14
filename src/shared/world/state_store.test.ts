@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import { MessageTree } from "../ai/message/tree.ts";
 import { MessageTreeManager } from "../ai/message/tree_manager.ts";
 import { StateStore } from "./state_store.ts";
-import type { StateChangeEvent } from "./types.ts";
+import type { FsmBlueprint, GaugeBlueprint, SemanticBlueprints, StateChangeEvent } from "./types.ts";
 
 describe("StateStore Core Operations", () => {
 
@@ -352,6 +352,201 @@ describe("StateStore Snapshots and Tree Rollback", () => {
 
 		assert.deepEqual(manager.getStateSnapshot(node.id), { "location.room": "entrance" });
 		assert.deepEqual(manager.getStateSnapshot(), { "location.room": "entrance" });
+
+	});
+
+});
+
+describe("StateStore Semantic Blueprint Integration", () => {
+
+	const sampleGauge: GaugeBlueprint = {
+		key: "sanity",
+		min: 0,
+		max: 100,
+		defaultValue: 80,
+		maxDeltaPerTurn: 15,
+		tiers: [
+			{
+				id: "hysterical",
+				label: "Hysterical",
+				min: 0,
+				max: 29,
+				directive: "Speak in disjointed phrases and fear shadows.",
+				onEnter: [{ type: "set", key: "is_hallucinating", value: true }],
+				onExit: [{ type: "delete", key: "is_hallucinating" }],
+			},
+			{
+				id: "unsettled",
+				label: "Unsettled",
+				min: 30,
+				max: 69,
+				directive: "Notice unnatural geometry and hesitate.",
+			},
+			{
+				id: "lucid",
+				label: "Lucid",
+				min: 70,
+				max: 100,
+				directive: "Think clearly and maintain composure.",
+			},
+		],
+	};
+
+	const sampleFsm: FsmBlueprint = {
+		key: "investigation_phase",
+		initialState: "briefing",
+		states: {
+			briefing: { directive: "Prepare investigation supplies." },
+			manor: { directive: "Search rooms in the manor." },
+			cellar: { directive: "Confront the ritual circle." },
+		},
+		transitions: [
+			{
+				from: "briefing",
+				to: "manor",
+				guard: { requiredFlags: ["briefing_done"] },
+			},
+			{
+				from: "manor",
+				to: "cellar",
+				guard: {
+					gaugeKey: "sanity",
+					maxGauge: 50,
+					requiredItems: ["cellar_key"],
+				},
+			},
+		],
+	};
+
+	const sampleBlueprints: SemanticBlueprints = {
+		gauges: [sampleGauge],
+		stateMachines: [sampleFsm],
+		flags: ["briefing_done"],
+		inventories: [{ key: "backpack", items: ["cellar_key"] }],
+	};
+
+	it("initializes default gauge and state machine values when blueprints are provided", () => {
+
+		const store = new StateStore(undefined, sampleBlueprints);
+
+		assert.equal(store.getState("sanity"), 80);
+		assert.equal(store.getState("investigation_phase"), "briefing");
+
+	});
+
+	it("preserves explicit initial states overriding blueprint defaults", () => {
+
+		const store = new StateStore(
+			{
+				sanity: 40,
+				investigation_phase: "manor",
+			},
+			sampleBlueprints,
+		);
+
+		assert.equal(store.getState("sanity"), 40);
+		assert.equal(store.getState("investigation_phase"), "manor");
+
+	});
+
+	it("clamps gauge mutations to maxDeltaPerTurn", () => {
+
+		const store = new StateStore(undefined, sampleBlueprints); // starts at 80
+
+		// Target is 40 (delta -40), maxDeltaPerTurn is 15 -> clamps to 65
+		const result = store.setState("sanity", 40);
+
+		assert.equal(result.newValue, 65);
+		assert.equal(store.getState("sanity"), 65);
+
+	});
+
+	it("executes registered tier onEnter and onExit transition actions", () => {
+
+		const store = new StateStore({ sanity: 35 }, sampleBlueprints); // Unsettled tier
+
+		assert.equal(store.getState("is_hallucinating"), undefined);
+
+		// Drop from 35 to 25 (Hysterical tier)
+		store.setState("sanity", 25);
+
+		assert.equal(store.getState("sanity"), 25);
+		assert.equal(store.getState("is_hallucinating"), true);
+
+		// Rise back to 40 (Unsettled tier) -> triggers onExit delete
+		store.setState("sanity", 40);
+
+		assert.equal(store.getState("sanity"), 40);
+		assert.equal(store.getState("is_hallucinating"), undefined);
+
+	});
+
+	it("enforces FSM transition guards and prevents illegal state mutations", () => {
+
+		const store = new StateStore(undefined, sampleBlueprints); // briefing state
+
+		// Attempt transition to manor without required flag
+		assert.throws(
+			() => store.setState("investigation_phase", "manor"),
+			/Transition guard failed/,
+		);
+		assert.equal(store.getState("investigation_phase"), "briefing");
+
+		// Set flag and try again
+		store.setState("briefing_done", true);
+		store.setState("investigation_phase", "manor");
+		assert.equal(store.getState("investigation_phase"), "manor");
+
+		// Attempt illegal transition (manor -> briefing is not declared)
+		assert.throws(
+			() => store.setState("investigation_phase", "briefing"),
+			/No permitted transition/,
+		);
+
+	});
+
+	it("validates atomic batch mutations across multiple updates in patchStates", () => {
+
+		const store = new StateStore({ sanity: 80 }, sampleBlueprints);
+
+		// Batch includes a valid flag update, a clamped gauge update, and an FSM transition
+		store.patchStates({
+			briefing_done: true,
+			sanity: 70,
+			investigation_phase: "manor",
+		});
+
+		assert.equal(store.getState("briefing_done"), true);
+		assert.equal(store.getState("sanity"), 70);
+		assert.equal(store.getState("investigation_phase"), "manor");
+
+		// Batch where an FSM guard fails: nothing should be applied
+		assert.throws(() => {
+			store.patchStates({
+				investigation_phase: "cellar", // fails: sanity is 70 > 50 and missing key
+				another_variable: 999,
+			});
+		}, /Transition guard failed/);
+
+		assert.equal(store.getState("investigation_phase"), "manor");
+		assert.equal(store.getState("another_variable"), undefined);
+
+	});
+
+	it("extracts and caches active directives from gauges and state machines", () => {
+
+		const store = new StateStore(undefined, sampleBlueprints); // sanity=80 (Lucid), phase=briefing
+
+		const directives = store.getActiveDirectives();
+		assert.equal(directives.tierDirectives.length, 1);
+		assert.equal(directives.tierDirectives[0].tierId, "lucid");
+		assert.equal(directives.fsmDirectives[0].state, "briefing");
+		assert.equal(directives.allDirectives.length, 2);
+
+		// Mutate state to update directives
+		store.setState("sanity", 35); // Unsettled
+		const updatedDirectives = store.getActiveDirectives();
+		assert.equal(updatedDirectives.tierDirectives[0].tierId, "unsettled");
 
 	});
 

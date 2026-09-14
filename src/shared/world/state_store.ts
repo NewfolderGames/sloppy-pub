@@ -1,6 +1,16 @@
 import { getStateValueType, UniverseCoordinator, validateStateValue } from "../universe/coordinator.ts";
 import { validateStateKey } from "./toml.ts";
-import type { StateChangeEvent, StateChangeListener, StateOperation, StateValue, UniverseStateChangeEvent, WorldStates } from "./types.ts";
+import type { ActiveDirectives } from "./semantic/validation_engine.ts";
+import { SemanticValidationEngine } from "./semantic/validation_engine.ts";
+import type {
+	SemanticBlueprints,
+	StateChangeEvent,
+	StateChangeListener,
+	StateOperation,
+	StateValue,
+	UniverseStateChangeEvent,
+	WorldStates,
+} from "./types.ts";
 
 export interface AttachUniverseOptions {
 	coordinator: UniverseCoordinator;
@@ -54,6 +64,9 @@ export class StateStore {
 	private listeners: Set<StateChangeListener>;
 	private currentSnapshot: WorldStates = {};
 	private isSnapshotDirty: boolean = true;
+	private validationEngine: SemanticValidationEngine;
+	private activeDirectivesCache?: ActiveDirectives;
+	private isDirectivesDirty: boolean = true;
 
 	// Universe Coordination
 
@@ -64,10 +77,23 @@ export class StateStore {
 	private unsubscribeUniverse?: () => void;
 	private isSyncingFromRemote: boolean = false;
 
-	public constructor(initialStates?: WorldStates) {
+	public constructor(initialStates?: WorldStates, blueprints?: SemanticBlueprints) {
 
 		this.states = {};
 		this.listeners = new Set<StateChangeListener>();
+		this.validationEngine = new SemanticValidationEngine(blueprints);
+
+		if (blueprints?.gauges) {
+			for (const gauge of blueprints.gauges) {
+				this.states[gauge.key] = gauge.defaultValue;
+			}
+		}
+
+		if (blueprints?.stateMachines) {
+			for (const fsm of blueprints.stateMachines) {
+				this.states[fsm.key] = fsm.initialState;
+			}
+		}
 
 		if (initialStates) {
 			for (const [key, value] of Object.entries(initialStates)) {
@@ -76,6 +102,60 @@ export class StateStore {
 				this.states[key] = cloneStateValue(validatedValue);
 			}
 		}
+
+	}
+
+	// Semantic Blueprints & Directives
+
+	public getBlueprints(): SemanticBlueprints {
+
+		return this.validationEngine.getBlueprints();
+
+	}
+
+	public getValidationEngine(): SemanticValidationEngine {
+
+		return this.validationEngine;
+
+	}
+
+	public setBlueprints(blueprints: SemanticBlueprints): void {
+
+		this.validationEngine = new SemanticValidationEngine(blueprints);
+		this.isDirectivesDirty = true;
+
+		if (blueprints.gauges) {
+			for (const gauge of blueprints.gauges) {
+				if (this.states[gauge.key] === undefined) {
+					this.states[gauge.key] = gauge.defaultValue;
+				}
+			}
+		}
+
+		if (blueprints.stateMachines) {
+			for (const fsm of blueprints.stateMachines) {
+				if (this.states[fsm.key] === undefined) {
+					this.states[fsm.key] = fsm.initialState;
+				}
+			}
+		}
+
+	}
+
+	public getActiveDirectives(): ActiveDirectives {
+
+		if (this.isDirectivesDirty || !this.activeDirectivesCache) {
+			this.activeDirectivesCache = this.validationEngine.extractActiveDirectives(this.states);
+			this.isDirectivesDirty = false;
+		}
+
+		return this.activeDirectivesCache;
+
+	}
+
+	public getActiveDirectiveStrings(): string[] {
+
+		return this.getActiveDirectives().allDirectives;
 
 	}
 
@@ -150,8 +230,31 @@ export class StateStore {
 			previousValue = cloneStateValue(existingValue);
 		}
 
-		this.states[key] = cloneStateValue(validatedValue);
+		// Semantic Validation Check
+		const validationResult = this.validationEngine.validateMutation(key, validatedValue, this.states);
+		if (!validationResult.allowed) {
+			throw new Error(validationResult.error ?? `Mutation rejected for key '${key}'.`);
+		}
+
+		const finalValue = validationResult.mutation?.value !== undefined
+			? validationResult.mutation.value
+			: validatedValue;
+
+		this.states[key] = cloneStateValue(finalValue);
 		this.isSnapshotDirty = true;
+		this.isDirectivesDirty = true;
+
+		// Execute transition operations triggered by tier crossings
+		if (validationResult.mutation && validationResult.mutation.transitionOperations.length > 0) {
+			for (const op of validationResult.mutation.transitionOperations) {
+				if (op.type === "set") {
+					this.setState(op.key, op.value, reason, source);
+				}
+				else if (op.type === "delete") {
+					this.deleteState(op.key);
+				}
+			}
+		}
 
 		// Synchronize with Universe Coordinator
 
@@ -168,7 +271,7 @@ export class StateStore {
 				this.universeId,
 				this.instanceId,
 				key,
-				validatedValue,
+				finalValue,
 				reason,
 			);
 		}
@@ -179,7 +282,7 @@ export class StateStore {
 			type: "state:updated",
 			key,
 			previousValue,
-			newValue: cloneStateValue(validatedValue),
+			newValue: cloneStateValue(finalValue),
 			reason,
 			source,
 			timestamp: Date.now(),
@@ -187,7 +290,7 @@ export class StateStore {
 
 		return {
 			previousValue,
-			newValue: cloneStateValue(validatedValue),
+			newValue: cloneStateValue(finalValue),
 		};
 
 	}
@@ -204,6 +307,7 @@ export class StateStore {
 
 		// Validation Phase (Atomic Check)
 
+		const simulatedStates: WorldStates = cloneWorldStates(this.states);
 		const validatedEntries: Array<{ key: string; value: StateValue }> = [];
 
 		for (const [key, value] of Object.entries(updates)) {
@@ -222,7 +326,17 @@ export class StateStore {
 				}
 			}
 
-			validatedEntries.push({ key, value: validatedValue });
+			const validationResult = this.validationEngine.validateMutation(key, validatedValue, simulatedStates);
+			if (!validationResult.allowed) {
+				throw new Error(validationResult.error ?? `Mutation rejected for key '${key}'.`);
+			}
+
+			const finalValue = validationResult.mutation?.value !== undefined
+				? validationResult.mutation.value
+				: validatedValue;
+
+			simulatedStates[key] = cloneStateValue(finalValue);
+			validatedEntries.push({ key, value: finalValue });
 		}
 
 		// Mutation Phase
@@ -231,7 +345,7 @@ export class StateStore {
 
 		for (const entry of validatedEntries) {
 			this.setState(entry.key, entry.value, reason, source);
-			appliedUpdates[entry.key] = cloneStateValue(entry.value);
+			appliedUpdates[entry.key] = cloneStateValue(this.states[entry.key]);
 		}
 
 		return {
@@ -253,6 +367,7 @@ export class StateStore {
 
 		// Validation Phase (Atomic Check)
 
+		const simulatedStates: WorldStates = cloneWorldStates(this.states);
 		const simulatedTypes = new Map<string, string | null>();
 		const validatedOperations: StateOperation[] = [];
 
@@ -287,16 +402,27 @@ export class StateStore {
 					);
 				}
 
+				const validationResult = this.validationEngine.validateMutation(op.key, validatedValue, simulatedStates);
+				if (!validationResult.allowed) {
+					throw new Error(validationResult.error ?? `Mutation rejected for key '${op.key}'.`);
+				}
+
+				const finalValue = validationResult.mutation?.value !== undefined
+					? validationResult.mutation.value
+					: validatedValue;
+
 				simulatedTypes.set(op.key, newType);
+				simulatedStates[op.key] = cloneStateValue(finalValue);
 
 				validatedOperations.push({
 					type: "set",
 					key: op.key,
-					value: validatedValue,
+					value: finalValue,
 				});
 			}
 			else if (op.type === "delete") {
 				simulatedTypes.set(op.key, null);
+				delete simulatedStates[op.key];
 
 				validatedOperations.push({
 					type: "delete",
@@ -331,6 +457,7 @@ export class StateStore {
 
 		delete this.states[key];
 		this.isSnapshotDirty = true;
+		this.isDirectivesDirty = true;
 
 		return true;
 
@@ -367,6 +494,7 @@ export class StateStore {
 
 		this.states = newStates;
 		this.isSnapshotDirty = true;
+		this.isDirectivesDirty = true;
 
 		this.emitEvent({
 			type: "state:updated",

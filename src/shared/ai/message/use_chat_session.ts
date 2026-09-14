@@ -257,11 +257,16 @@ export async function runChatStream(options: RunChatStreamOptions): Promise<void
 					}
 					else if (stateCmd.key && session.stateStore) {
 
-						if (stateCmd.op === "delete") {
-							session.stateStore.deleteState(stateCmd.key);
+						try {
+							if (stateCmd.op === "delete") {
+								session.stateStore.deleteState(stateCmd.key);
+							}
+							else {
+								session.stateStore.setState(stateCmd.key, stateCmd.value);
+							}
 						}
-						else {
-							session.stateStore.setState(stateCmd.key, stateCmd.value);
+						catch {
+							// Ignored when state mutation is rejected by semantic validation pipeline
 						}
 
 					}

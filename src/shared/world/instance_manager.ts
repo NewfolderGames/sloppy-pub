@@ -419,7 +419,7 @@ function buildInstanceFromAssets(
 
 	// Initialize state store & attach universe to obtain full initial states
 	const initialStatesRecord: Record<string, any> = worldfile.states ? { ...worldfile.states } : {};
-	const stateStore = new StateStore(initialStatesRecord);
+	const stateStore = new StateStore(initialStatesRecord, worldfile.blueprints);
 
 	if (input.universeId && universe) {
 		const coordinator = UniverseCoordinator.getInstance();
@@ -515,6 +515,7 @@ function buildInstanceFromAssets(
 		worldPrompt: initialPrompt,
 		messageTreeData: treeManager.toJSON(),
 		activeStates: initialStates,
+		blueprints: worldfile.blueprints,
 		characterIds: uniqueCharacterIds,
 		characterInstances,
 		events: [],
@@ -687,7 +688,7 @@ export function createInstanceSession(
 	coordinator: UniverseCoordinator = UniverseCoordinator.getInstance(),
 ): InstanceSession {
 
-	const stateStore = new StateStore(instance.activeStates);
+	const stateStore = new StateStore(instance.activeStates, instance.blueprints);
 
 	if (instance.universeId) {
 		const universeRecord = getUniverse(instance.universeId);
