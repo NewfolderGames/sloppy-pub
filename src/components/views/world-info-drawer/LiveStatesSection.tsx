@@ -101,7 +101,7 @@ export function LiveStatesSection({
 		<CollapsibleSection
 			title={`Live State Variables (${stateCount})`}
 			badge={<Badge>{stateCount}</Badge>}
-			defaultOpen={true}
+			defaultOpen={false}
 		>
 			<input
 				type="text"
@@ -127,7 +127,14 @@ export function LiveStatesSection({
 								<div className={styles.gaugeHeader}>
 									<span className={styles.gaugeKey}>{gauge.key}</span>
 									<span className={styles.gaugeValues}>
-										{val} / {gauge.max} (min: {gauge.min})
+										{val}
+										{" "}
+										/
+										{gauge.max}
+										{" "}
+										(min:
+										{gauge.min}
+										)
 									</span>
 								</div>
 
@@ -161,7 +168,7 @@ export function LiveStatesSection({
 						const rawState = displayStates[fsm.key];
 						const currentState = typeof rawState === "string" ? rawState : fsm.initialState;
 						const directive = fsm.states[currentState]?.directive;
-						const nextTransitions = fsm.transitions.filter((t) => t.from === currentState);
+						const nextTransitions = fsm.transitions.filter(t => t.from === currentState);
 
 						return (
 							<div key={fsm.key} className={styles.fsmCard}>
@@ -176,7 +183,10 @@ export function LiveStatesSection({
 
 								{nextTransitions.length > 0 && (
 									<div className={styles.transitionsList}>
-										<span>Permitted: {nextTransitions.map((t) => t.to).join(", ")}</span>
+										<span>
+											Permitted:
+											{nextTransitions.map(t => t.to).join(", ")}
+										</span>
 									</div>
 								)}
 							</div>

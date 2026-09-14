@@ -24,7 +24,7 @@ export function CharactersSection({
 		<CollapsibleSection
 			title={`Characters (${count})`}
 			badge={<Badge>{count}</Badge>}
-			defaultOpen={true}
+			defaultOpen={false}
 		>
 			<div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 				{displayItems.map((item, idx) => {

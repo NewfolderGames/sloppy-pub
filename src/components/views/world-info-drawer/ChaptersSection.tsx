@@ -15,7 +15,7 @@ export function ChaptersSection({
 		<CollapsibleSection
 			title={`Chapters (${chapters.length})`}
 			badge={<Badge>{chapters.length}</Badge>}
-			defaultOpen={true}
+			defaultOpen={false}
 		>
 			{chapters.length === 0 && (
 				<p className={styles.hint}>No chapters recorded yet.</p>
@@ -38,7 +38,7 @@ export function ChaptersSection({
 							{chapter.eventIds && chapter.eventIds.length > 0 && (
 								<div className={styles.eventLinks}>
 									<span className={styles.hint}>
-										Covered events: 
+										Covered events:
 										{" "}
 										{chapter.eventIds.length}
 									</span>

@@ -26,7 +26,7 @@ export function WorldMetadataSection({
 		<CollapsibleSection
 			title={title}
 			badge={versionBadge}
-			defaultOpen={true}
+			defaultOpen={false}
 		>
 			{worldfile?.metadata.description && (
 				<p className={styles.metaText}>{worldfile.metadata.description}</p>

@@ -30,7 +30,7 @@ export function UniverseSection({
 		<CollapsibleSection
 			title={universe.universe.metadata.title}
 			badge={modeBadge}
-			defaultOpen={true}
+			defaultOpen={false}
 		>
 			<p className={styles.hint}>{universe.universe.metadata.description}</p>
 

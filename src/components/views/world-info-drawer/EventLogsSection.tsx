@@ -15,7 +15,7 @@ export function EventLogsSection({
 		<CollapsibleSection
 			title={`Event Logs (${events.length})`}
 			badge={<Badge>{events.length}</Badge>}
-			defaultOpen={true}
+			defaultOpen={false}
 		>
 			{events.length === 0 && (
 				<p className={styles.hint}>No event logs recorded yet.</p>
