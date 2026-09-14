@@ -1,4 +1,4 @@
-import type { WorldStates } from "../world/types.ts";
+import type { SemanticBlueprints, WorldStates } from "../world/types.ts";
 
 export interface CharacterfileMetadata {
 	name: string;
@@ -43,6 +43,7 @@ export interface Characterfile {
 	backgrounds: CharacterBackground[];
 	example_dialogs: ExampleDialog[];
 	initial_states: CharacterStates;
+	blueprints?: SemanticBlueprints;
 }
 
 export interface CharacterThought {
@@ -72,6 +73,7 @@ export interface CharacterInstance {
 	emotions: CharacterEmotion[];
 	goals: CharacterGoal[];
 	states: CharacterStates;
+	blueprints?: SemanticBlueprints;
 }
 
 export interface StoredCharacterfile {

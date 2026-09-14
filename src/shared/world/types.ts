@@ -94,12 +94,65 @@ export type StateValue = StatePrimitive | StatePrimitive[];
 
 export type WorldStates = Record<string, StateValue>;
 
+export interface GaugeTier {
+	id: string;
+	label: string;
+	min: number;
+	max: number;
+	directive: string;
+	onEnter?: StateOperation[];
+	onExit?: StateOperation[];
+}
+
+export interface GaugeBlueprint {
+	key: string;
+	min: number;
+	max: number;
+	defaultValue: number;
+	maxDeltaPerTurn?: number;
+	tiers: GaugeTier[];
+}
+
+export interface FsmGuard {
+	gaugeKey?: string;
+	minGauge?: number;
+	maxGauge?: number;
+	requiredFlags?: string[];
+	requiredItems?: string[];
+}
+
+export interface FsmTransition {
+	from: string;
+	to: string;
+	guard?: FsmGuard;
+}
+
+export interface FsmBlueprint {
+	key: string;
+	initialState: string;
+	states: Record<string, { directive?: string }>;
+	transitions: FsmTransition[];
+}
+
+export interface InventoryBlueprint {
+	key: string;
+	items: string[];
+}
+
+export interface SemanticBlueprints {
+	gauges?: GaugeBlueprint[];
+	stateMachines?: FsmBlueprint[];
+	inventories?: InventoryBlueprint[];
+	flags?: string[];
+}
+
 export interface Worldfile {
 	metadata: WorldfileMetadata;
 	args?: ArgumentDefinition[];
 	vars?: VariableDefinition[];
 	content: WorldfileContent;
 	states?: WorldStates;
+	blueprints?: SemanticBlueprints;
 }
 
 export interface Universefile {
@@ -143,6 +196,7 @@ export interface WorldInstance {
 	worldPrompt?: string;
 	messageTreeData: unknown;
 	activeStates: WorldStates;
+	blueprints?: SemanticBlueprints;
 	characterIds?: string[];
 	characterInstances?: CharacterInstance[];
 	events?: SessionEvent[];

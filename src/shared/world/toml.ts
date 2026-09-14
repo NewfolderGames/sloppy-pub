@@ -1,6 +1,30 @@
 import { parse } from "smol-toml";
 import { stringifyToml } from "../toml/stringify.ts";
-import type { ArgumentDefinition, ArgumentType, ContentPlotIncident, ContentPlotIncidentItem, ContentPlotIntro, ContentPlotIntroItem, ContentSettings, StatePrimitive, StateValue, Universefile, Worldfile, WorldfileContent, WorldfileFeelingLucky, WorldfileMetadata, WorldStates } from "./types.ts";
+import type {
+	ArgumentDefinition,
+	ArgumentType,
+	ContentPlotIncident,
+	ContentPlotIncidentItem,
+	ContentPlotIntro,
+	ContentPlotIntroItem,
+	ContentSettings,
+	FsmBlueprint,
+	FsmGuard,
+	FsmTransition,
+	GaugeBlueprint,
+	GaugeTier,
+	InventoryBlueprint,
+	SemanticBlueprints,
+	StateOperation,
+	StatePrimitive,
+	StateValue,
+	Universefile,
+	Worldfile,
+	WorldfileContent,
+	WorldfileFeelingLucky,
+	WorldfileMetadata,
+	WorldStates,
+} from "./types.ts";
 
 const VALID_ARG_TYPES: readonly ArgumentType[] = [
 	"text",
@@ -442,6 +466,381 @@ function parseContent(rawContent: unknown): WorldfileContent {
 	return content;
 }
 
+// Blueprints Parsing and Validation
+
+function parseStateOperations(rawOps: unknown, fieldName: string): StateOperation[] {
+	if (!Array.isArray(rawOps)) {
+		throw new Error(`Field "${fieldName}" must be an array of state operations.`);
+	}
+
+	return rawOps.map((opItem, opIdx) => {
+		assertObject(opItem, `${fieldName}[${opIdx}]`);
+
+		const type = opItem.type;
+		if (type !== "set" && type !== "delete") {
+			throw new Error(`State operation at ${fieldName}[${opIdx}] must have type "set" or "delete".`);
+		}
+
+		assertString(opItem.key, `${fieldName}[${opIdx}].key`);
+		validateStateKey(opItem.key);
+
+		if (type === "delete") {
+			return { type: "delete", key: opItem.key };
+		}
+
+		if (opItem.value === undefined) {
+			throw new Error(`Set operation at ${fieldName}[${opIdx}] must specify a value.`);
+		}
+
+		return {
+			type: "set",
+			key: opItem.key,
+			value: opItem.value as StateValue,
+		};
+	});
+}
+
+function parseGaugeTier(tierItem: unknown, gaugeKey: string, tierIndex: number): GaugeTier {
+	assertObject(tierItem, `blueprints.gauges[${gaugeKey}].tiers[${tierIndex}]`);
+
+	assertString(tierItem.id, `blueprints.gauges[${gaugeKey}].tiers[${tierIndex}].id`);
+	assertString(tierItem.label, `blueprints.gauges[${gaugeKey}].tiers[${tierIndex}].label`);
+
+	if (typeof tierItem.min !== "number" || Number.isNaN(tierItem.min)) {
+		throw new Error(`Tier "${tierItem.id}" min must be a number.`);
+	}
+
+	if (typeof tierItem.max !== "number" || Number.isNaN(tierItem.max)) {
+		throw new Error(`Tier "${tierItem.id}" max must be a number.`);
+	}
+
+	if (tierItem.min > tierItem.max) {
+		throw new Error(`Tier "${tierItem.id}" min (${tierItem.min}) cannot exceed max (${tierItem.max}).`);
+	}
+
+	assertString(tierItem.directive, `blueprints.gauges[${gaugeKey}].tiers[${tierIndex}].directive`, true);
+
+	const tier: GaugeTier = {
+		id: tierItem.id,
+		label: tierItem.label,
+		min: tierItem.min,
+		max: tierItem.max,
+		directive: tierItem.directive,
+	};
+
+	const rawOnEnter = tierItem.on_enter ?? tierItem.onEnter;
+	if (rawOnEnter !== undefined) {
+		tier.onEnter = parseStateOperations(rawOnEnter, `blueprints.gauges[${gaugeKey}].tiers[${tierIndex}].onEnter`);
+	}
+
+	const rawOnExit = tierItem.on_exit ?? tierItem.onExit;
+	if (rawOnExit !== undefined) {
+		tier.onExit = parseStateOperations(rawOnExit, `blueprints.gauges[${gaugeKey}].tiers[${tierIndex}].onExit`);
+	}
+
+	return tier;
+}
+
+function parseGaugeBlueprint(item: unknown, index: number): GaugeBlueprint {
+	assertObject(item, `blueprints.gauges[${index}]`);
+
+	assertString(item.key, `blueprints.gauges[${index}].key`);
+	validateStateKey(item.key);
+
+	if (typeof item.min !== "number" || Number.isNaN(item.min)) {
+		throw new Error(`Field "blueprints.gauges[${index}].min" must be a number.`);
+	}
+
+	if (typeof item.max !== "number" || Number.isNaN(item.max)) {
+		throw new Error(`Field "blueprints.gauges[${index}].max" must be a number.`);
+	}
+
+	if (item.min >= item.max) {
+		throw new Error(`Gauge "${item.key}" min (${item.min}) must be less than max (${item.max}).`);
+	}
+
+	const rawDefault = item.default_value ?? item.defaultValue ?? item.default;
+	const defaultValue = typeof rawDefault === "number" && !Number.isNaN(rawDefault) ? rawDefault : item.min;
+
+	const rawDelta = item.max_delta_per_turn ?? item.maxDeltaPerTurn;
+	const maxDeltaPerTurn = typeof rawDelta === "number" && !Number.isNaN(rawDelta) ? rawDelta : undefined;
+
+	if (!Array.isArray(item.tiers) || item.tiers.length === 0) {
+		throw new Error(`Gauge "${item.key}" must contain at least one tier.`);
+	}
+
+	const tiers: GaugeTier[] = item.tiers.map((tierItem, tierIdx) => parseGaugeTier(tierItem, item.key as string, tierIdx));
+
+	return {
+		key: item.key,
+		min: item.min,
+		max: item.max,
+		defaultValue,
+		...(maxDeltaPerTurn !== undefined ? { maxDeltaPerTurn } : {}),
+		tiers,
+	};
+}
+
+function parseFsmBlueprint(item: unknown, index: number): FsmBlueprint {
+	assertObject(item, `blueprints.state_machines[${index}]`);
+
+	assertString(item.key, `blueprints.state_machines[${index}].key`);
+	validateStateKey(item.key);
+
+	const rawInitial = item.initial_state ?? item.initialState;
+	assertString(rawInitial, `blueprints.state_machines[${index}].initialState`);
+
+	assertObject(item.states, `blueprints.state_machines[${index}].states`);
+
+	const states: Record<string, { directive?: string }> = {};
+
+	for (const [stateName, stateDef] of Object.entries(item.states)) {
+		if (typeof stateDef === "string") {
+			states[stateName] = { directive: stateDef };
+			continue;
+		}
+
+		if (stateDef !== null && typeof stateDef === "object" && !Array.isArray(stateDef)) {
+			const dir = (stateDef as Record<string, unknown>).directive;
+			states[stateName] = {
+				...(typeof dir === "string" ? { directive: dir } : {}),
+			};
+			continue;
+		}
+
+		states[stateName] = {};
+	}
+
+	if (!(rawInitial in states)) {
+		throw new Error(`State machine "${item.key}" initialState "${rawInitial}" is not declared in states.`);
+	}
+
+	const rawTransitions = item.transitions;
+	if (!Array.isArray(rawTransitions)) {
+		throw new Error(`State machine "${item.key}" transitions must be an array.`);
+	}
+
+	const transitions: FsmTransition[] = rawTransitions.map((tItem, tIdx) => {
+		assertObject(tItem, `blueprints.state_machines[${index}].transitions[${tIdx}]`);
+		assertString(tItem.from, `transitions[${tIdx}].from`);
+		assertString(tItem.to, `transitions[${tIdx}].to`);
+
+		if (!(tItem.from in states)) {
+			throw new Error(`Transition from "${tItem.from}" refers to an undefined state.`);
+		}
+
+		if (!(tItem.to in states)) {
+			throw new Error(`Transition to "${tItem.to}" refers to an undefined state.`);
+		}
+
+		const transition: FsmTransition = {
+			from: tItem.from,
+			to: tItem.to,
+		};
+
+		if (tItem.guard !== undefined && tItem.guard !== null && typeof tItem.guard === "object") {
+			const g = tItem.guard as Record<string, unknown>;
+			const guard: FsmGuard = {};
+
+			const gaugeKey = g.gauge_key ?? g.gaugeKey;
+			if (typeof gaugeKey === "string") {
+				guard.gaugeKey = gaugeKey;
+			}
+
+			const minGauge = g.min_gauge ?? g.minGauge;
+			if (typeof minGauge === "number" && !Number.isNaN(minGauge)) {
+				guard.minGauge = minGauge;
+			}
+
+			const maxGauge = g.max_gauge ?? g.maxGauge;
+			if (typeof maxGauge === "number" && !Number.isNaN(maxGauge)) {
+				guard.maxGauge = maxGauge;
+			}
+
+			const reqFlags = g.required_flags ?? g.requiredFlags;
+			if (Array.isArray(reqFlags)) {
+				assertStringArray(reqFlags, `transitions[${tIdx}].guard.requiredFlags`);
+				guard.requiredFlags = [...reqFlags];
+			}
+
+			const reqItems = g.required_items ?? g.requiredItems;
+			if (Array.isArray(reqItems)) {
+				assertStringArray(reqItems, `transitions[${tIdx}].guard.requiredItems`);
+				guard.requiredItems = [...reqItems];
+			}
+
+			transition.guard = guard;
+		}
+
+		return transition;
+	});
+
+	return {
+		key: item.key,
+		initialState: rawInitial,
+		states,
+		transitions,
+	};
+}
+
+function parseInventoryBlueprint(item: unknown, index: number): InventoryBlueprint {
+	assertObject(item, `blueprints.inventories[${index}]`);
+
+	assertString(item.key, `blueprints.inventories[${index}].key`);
+	validateStateKey(item.key);
+
+	const rawItems = item.items ?? [];
+	assertStringArray(rawItems, `blueprints.inventories[${index}].items`);
+
+	return {
+		key: item.key,
+		items: [...rawItems],
+	};
+}
+
+export function parseSemanticBlueprints(rawBlueprints: unknown): SemanticBlueprints {
+	if (rawBlueprints === null || typeof rawBlueprints !== "object" || Array.isArray(rawBlueprints)) {
+		throw new Error("Field \"blueprints\" must be an object table.");
+	}
+
+	const raw = rawBlueprints as Record<string, unknown>;
+	const result: SemanticBlueprints = {};
+
+	if (raw.flags !== undefined) {
+		assertStringArray(raw.flags, "blueprints.flags");
+		result.flags = [...raw.flags];
+	}
+
+	if (raw.gauges !== undefined) {
+		if (!Array.isArray(raw.gauges)) {
+			throw new Error("Field \"blueprints.gauges\" must be an array of gauge tables.");
+		}
+
+		result.gauges = raw.gauges.map((gaugeItem, idx) => parseGaugeBlueprint(gaugeItem, idx));
+	}
+
+	const rawStateMachines = raw.state_machines ?? raw.stateMachines;
+	if (rawStateMachines !== undefined) {
+		if (!Array.isArray(rawStateMachines)) {
+			throw new Error("Field \"blueprints.state_machines\" must be an array of state machine tables.");
+		}
+
+		result.stateMachines = rawStateMachines.map((fsmItem, idx) => parseFsmBlueprint(fsmItem, idx));
+	}
+
+	if (raw.inventories !== undefined) {
+		if (!Array.isArray(raw.inventories)) {
+			throw new Error("Field \"blueprints.inventories\" must be an array of inventory tables.");
+		}
+
+		result.inventories = raw.inventories.map((invItem, idx) => parseInventoryBlueprint(invItem, idx));
+	}
+
+	return result;
+}
+
+export function serializeSemanticBlueprints(blueprints: SemanticBlueprints): Record<string, unknown> {
+	const doc: Record<string, unknown> = {};
+
+	if (blueprints.flags && blueprints.flags.length > 0) {
+		doc.flags = blueprints.flags;
+	}
+
+	if (blueprints.gauges && blueprints.gauges.length > 0) {
+		doc.gauges = blueprints.gauges.map((gauge) => {
+			const gaugeDoc: Record<string, unknown> = {
+				key: gauge.key,
+				min: gauge.min,
+				max: gauge.max,
+				default_value: gauge.defaultValue,
+			};
+
+			if (gauge.maxDeltaPerTurn !== undefined) {
+				gaugeDoc.max_delta_per_turn = gauge.maxDeltaPerTurn;
+			}
+
+			gaugeDoc.tiers = gauge.tiers.map((tier) => {
+				const tierDoc: Record<string, unknown> = {
+					id: tier.id,
+					label: tier.label,
+					min: tier.min,
+					max: tier.max,
+					directive: tier.directive,
+				};
+
+				if (tier.onEnter && tier.onEnter.length > 0) {
+					tierDoc.on_enter = tier.onEnter;
+				}
+
+				if (tier.onExit && tier.onExit.length > 0) {
+					tierDoc.on_exit = tier.onExit;
+				}
+
+				return tierDoc;
+			});
+
+			return gaugeDoc;
+		});
+	}
+
+	if (blueprints.stateMachines && blueprints.stateMachines.length > 0) {
+		doc.state_machines = blueprints.stateMachines.map((fsm) => {
+			const fsmDoc: Record<string, unknown> = {
+				key: fsm.key,
+				initial_state: fsm.initialState,
+				states: fsm.states,
+				transitions: fsm.transitions.map((t) => {
+					const tDoc: Record<string, unknown> = {
+						from: t.from,
+						to: t.to,
+					};
+
+					if (t.guard) {
+						const gDoc: Record<string, unknown> = {};
+
+						if (t.guard.gaugeKey !== undefined) {
+							gDoc.gauge_key = t.guard.gaugeKey;
+						}
+
+						if (t.guard.minGauge !== undefined) {
+							gDoc.min_gauge = t.guard.minGauge;
+						}
+
+						if (t.guard.maxGauge !== undefined) {
+							gDoc.max_gauge = t.guard.maxGauge;
+						}
+
+						if (t.guard.requiredFlags && t.guard.requiredFlags.length > 0) {
+							gDoc.required_flags = t.guard.requiredFlags;
+						}
+
+						if (t.guard.requiredItems && t.guard.requiredItems.length > 0) {
+							gDoc.required_items = t.guard.requiredItems;
+						}
+
+						if (Object.keys(gDoc).length > 0) {
+							tDoc.guard = gDoc;
+						}
+					}
+
+					return tDoc;
+				}),
+			};
+
+			return fsmDoc;
+		});
+	}
+
+	if (blueprints.inventories && blueprints.inventories.length > 0) {
+		doc.inventories = blueprints.inventories.map(inv => ({
+			key: inv.key,
+			items: inv.items,
+		}));
+	}
+
+	return doc;
+}
+
 // Public TOML Parsers and Serializers
 
 export function parseWorldfile(tomlContent: string): Worldfile {
@@ -475,6 +874,10 @@ export function parseWorldfile(tomlContent: string): Worldfile {
 
 	if (raw.states !== undefined) {
 		worldfile.states = flattenStates(raw.states);
+	}
+
+	if (raw.blueprints !== undefined) {
+		worldfile.blueprints = parseSemanticBlueprints(raw.blueprints);
 	}
 
 	return worldfile;
@@ -568,6 +971,13 @@ export function serializeWorldfile(worldfile: Worldfile): string {
 
 	if (worldfile.states && Object.keys(worldfile.states).length > 0) {
 		doc.states = worldfile.states;
+	}
+
+	if (worldfile.blueprints !== undefined) {
+		const blueprintsDoc = serializeSemanticBlueprints(worldfile.blueprints);
+		if (Object.keys(blueprintsDoc).length > 0) {
+			doc.blueprints = blueprintsDoc;
+		}
 	}
 
 	return stringifyToml(doc);

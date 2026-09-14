@@ -381,4 +381,64 @@ description = "Desc"
 			/Field "physical_characteristics" must be an array/,
 		);
 	});
+
+	test("parses and serializes Characterfile with blueprints", () => {
+		const toml = `
+[metadata]
+name = "sorceress"
+version = "1.0.0"
+title = "Sorceress"
+description = "A powerful arcane spellcaster."
+summary = "Arcane spellcaster"
+
+[blueprints]
+flags = ["awakened", "ascended"]
+
+[[blueprints.gauges]]
+key = "mana"
+min = 0
+max = 200
+default_value = 100
+max_delta_per_turn = 50
+
+[[blueprints.gauges.tiers]]
+id = "surge"
+label = "Surge"
+min = 150
+max = 200
+directive = "Cast spells with overpowering intensity."
+
+[[blueprints.gauges.tiers]]
+id = "normal"
+label = "Normal"
+min = 50
+max = 149
+directive = "Maintain steady magical cadence."
+
+[[blueprints.gauges.tiers]]
+id = "depleted"
+label = "Depleted"
+min = 0
+max = 49
+directive = "Gasp for breath and avoid spellcasting."
+
+[[blueprints.inventories]]
+key = "spellbook"
+items = ["fireball", "teleport"]
+`;
+		const parsed = parseCharacterfile(toml);
+
+		assert.ok(parsed.blueprints);
+		assert.deepEqual(parsed.blueprints.flags, ["awakened", "ascended"]);
+		assert.equal(parsed.blueprints.gauges?.length, 1);
+		assert.equal(parsed.blueprints.gauges![0].key, "mana");
+		assert.equal(parsed.blueprints.gauges![0].defaultValue, 100);
+		assert.equal(parsed.blueprints.gauges![0].tiers.length, 3);
+		assert.deepEqual(parsed.blueprints.inventories?.[0].items, ["fireball", "teleport"]);
+
+		const serialized = serializeCharacterfile(parsed);
+		const roundTripped = parseCharacterfile(serialized);
+
+		assert.deepEqual(roundTripped.blueprints, parsed.blueprints);
+	});
 });

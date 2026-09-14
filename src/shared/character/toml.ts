@@ -1,6 +1,6 @@
 import { parse } from "smol-toml";
 import { stringifyToml } from "../toml/stringify.ts";
-import { flattenStates } from "../world/toml.ts";
+import { flattenStates, parseSemanticBlueprints, serializeSemanticBlueprints } from "../world/toml.ts";
 import type { CharacterBackground, Characterfile, CharacterfileMetadata, CharacterStates, ExampleDialog, NamedTrait } from "./types.ts";
 
 export const DEFAULT_PHYSICAL_TRAITS: readonly string[] = ["Species", "Age", "Height"] as const;
@@ -375,8 +375,8 @@ export function parseCharacterfile(tomlContent: string): Characterfile {
 			: rawRoot.summaryLucky !== undefined
 				? rawRoot.summaryLucky
 				: (rawRoot.feeling_lucky as Record<string, unknown>)?.summary !== undefined
-					? (rawRoot.feeling_lucky as Record<string, unknown>).summary
-					: (rawRoot.metadata as Record<string, unknown>)?.summary_lucky;
+						? (rawRoot.feeling_lucky as Record<string, unknown>).summary
+						: (rawRoot.metadata as Record<string, unknown>)?.summary_lucky;
 	const summary_lucky = rawSummaryLucky !== undefined ? Boolean(rawSummaryLucky) : undefined;
 
 	const parsedPhysical = parseNamedTraitList(rawRoot.physical_characteristics, "physical_characteristics");
@@ -413,6 +413,11 @@ export function parseCharacterfile(tomlContent: string): Characterfile {
 		initial_states = flattenStates(rawRoot.initial_states);
 	}
 
+	const rawBlueprints = rawRoot.blueprints;
+	const blueprints = rawBlueprints !== undefined && rawBlueprints !== null
+		? parseSemanticBlueprints(rawBlueprints)
+		: undefined;
+
 	return {
 		metadata,
 		summary,
@@ -426,6 +431,7 @@ export function parseCharacterfile(tomlContent: string): Characterfile {
 		backgrounds,
 		example_dialogs,
 		initial_states,
+		...(blueprints !== undefined ? { blueprints } : {}),
 	};
 }
 
@@ -527,6 +533,13 @@ export function serializeCharacterfile(characterfile: Characterfile): string {
 
 	if (characterfile.initial_states && Object.keys(characterfile.initial_states).length > 0) {
 		doc.initial_states = characterfile.initial_states;
+	}
+
+	if (characterfile.blueprints !== undefined) {
+		const blueprintsDoc = serializeSemanticBlueprints(characterfile.blueprints);
+		if (Object.keys(blueprintsDoc).length > 0) {
+			doc.blueprints = blueprintsDoc;
+		}
 	}
 
 	return stringifyToml(doc);

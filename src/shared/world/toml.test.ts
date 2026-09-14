@@ -369,3 +369,168 @@ Expansion continuing indefinitely."""
 		);
 	});
 });
+
+describe("Worldfile Semantic Blueprints Parsing and Serialization", () => {
+	const sampleBlueprintsToml = `
+name = "eldritch-investigation"
+version = "1.0.0"
+title = "Eldritch Investigation"
+description = "A psychological horror scenario."
+
+[content]
+description = "Investigating an abandoned observatory."
+
+[blueprints]
+flags = ["investigated_cellar", "found_relic"]
+
+[[blueprints.gauges]]
+key = "sanity"
+min = 0
+max = 100
+default_value = 80
+max_delta_per_turn = 15
+
+[[blueprints.gauges.tiers]]
+id = "lucid"
+label = "Lucid"
+min = 70
+max = 100
+directive = "The investigator perceives reality accurately and speaks calmly."
+
+[[blueprints.gauges.tiers]]
+id = "unsettled"
+label = "Unsettled"
+min = 30
+max = 69
+directive = "The investigator notices disturbing shadows and stammers occasionally."
+
+[[blueprints.gauges.tiers]]
+id = "hysterical"
+label = "Hysterical"
+min = 0
+max = 29
+directive = "The investigator hallucinates whispering voices and behaves erratically."
+
+[[blueprints.gauges.tiers.on_enter]]
+type = "set"
+key = "hallucinating"
+value = true
+
+[[blueprints.state_machines]]
+key = "investigation_phase"
+initial_state = "briefing"
+
+[blueprints.state_machines.states.briefing]
+directive = "Reviewing case files before entering the manor."
+
+[blueprints.state_machines.states.exploration]
+directive = "Searching rooms for clues."
+
+[blueprints.state_machines.states.climax]
+directive = "Confronting the ritual in the underground chamber."
+
+[[blueprints.state_machines.transitions]]
+from = "briefing"
+to = "exploration"
+
+[blueprints.state_machines.transitions.guard]
+required_flags = ["found_relic"]
+
+[[blueprints.state_machines.transitions]]
+from = "exploration"
+to = "climax"
+
+[blueprints.state_machines.transitions.guard]
+gauge_key = "sanity"
+max_gauge = 40
+required_items = ["silver_key"]
+
+[[blueprints.inventories]]
+key = "backpack"
+items = ["silver_key", "lantern"]
+`;
+
+	test("parses blueprints with gauges, state machines, inventories, and flags", () => {
+		const wf = parseWorldfile(sampleBlueprintsToml);
+
+		assert.ok(wf.blueprints);
+		assert.deepEqual(wf.blueprints.flags, ["investigated_cellar", "found_relic"]);
+
+		assert.equal(wf.blueprints.gauges?.length, 1);
+		const gauge = wf.blueprints.gauges![0];
+		assert.equal(gauge.key, "sanity");
+		assert.equal(gauge.min, 0);
+		assert.equal(gauge.max, 100);
+		assert.equal(gauge.defaultValue, 80);
+		assert.equal(gauge.maxDeltaPerTurn, 15);
+		assert.equal(gauge.tiers.length, 3);
+		assert.equal(gauge.tiers[0].id, "lucid");
+		assert.equal(gauge.tiers[2].onEnter?.[0].type, "set");
+
+		assert.equal(wf.blueprints.stateMachines?.length, 1);
+		const fsm = wf.blueprints.stateMachines![0];
+		assert.equal(fsm.key, "investigation_phase");
+		assert.equal(fsm.initialState, "briefing");
+		assert.equal(fsm.transitions.length, 2);
+		assert.deepEqual(fsm.transitions[0].guard?.requiredFlags, ["found_relic"]);
+		assert.equal(fsm.transitions[1].guard?.gaugeKey, "sanity");
+		assert.equal(fsm.transitions[1].guard?.maxGauge, 40);
+		assert.deepEqual(fsm.transitions[1].guard?.requiredItems, ["silver_key"]);
+
+		assert.equal(wf.blueprints.inventories?.length, 1);
+		assert.equal(wf.blueprints.inventories![0].key, "backpack");
+		assert.deepEqual(wf.blueprints.inventories![0].items, ["silver_key", "lantern"]);
+	});
+
+	test("serializes and round-trips blueprints without loss", () => {
+		const original = parseWorldfile(sampleBlueprintsToml);
+		const toml = serializeWorldfile(original);
+		const roundTripped = parseWorldfile(toml);
+
+		assert.deepEqual(roundTripped.blueprints, original.blueprints);
+	});
+
+	test("rejects invalid gauge min and max boundaries", () => {
+		const invalidGaugeToml = `
+name = "test"
+version = "1.0.0"
+title = "Test"
+description = "Test"
+[content]
+description = "Test content"
+[blueprints]
+[[blueprints.gauges]]
+key = "bad_gauge"
+min = 100
+max = 50
+[[blueprints.gauges.tiers]]
+id = "t1"
+label = "T1"
+min = 0
+max = 100
+directive = "dir"
+`;
+		assert.throws(() => parseWorldfile(invalidGaugeToml), /min \(100\) must be less than max \(50\)/);
+	});
+
+	test("rejects FSM with transition referencing undefined state", () => {
+		const invalidFsmToml = `
+name = "test"
+version = "1.0.0"
+title = "Test"
+description = "Test"
+[content]
+description = "Test content"
+[blueprints]
+[[blueprints.state_machines]]
+key = "phase"
+initial_state = "start"
+[blueprints.state_machines.states.start]
+directive = "start"
+[[blueprints.state_machines.transitions]]
+from = "start"
+to = "nonexistent"
+`;
+		assert.throws(() => parseWorldfile(invalidFsmToml), /refers to an undefined state/);
+	});
+});
