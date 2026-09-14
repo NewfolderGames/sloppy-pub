@@ -57,6 +57,10 @@ export interface AppBlock {
 export interface ChoiceOption {
 	id: string;
 	text: string;
+	requiredFlags?: string[];
+	requiredItems?: string[];
+	locked?: boolean;
+	lockReason?: string;
 }
 
 export interface ChoiceBlock {

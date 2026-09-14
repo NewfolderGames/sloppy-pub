@@ -49,6 +49,70 @@ export interface MutationValidationResult {
 	mutation?: ValidatedMutation;
 }
 
+export interface OptionGatingResult {
+	isLocked: boolean;
+	lockReason?: string;
+}
+
+export interface ChoiceGatingOption {
+	id?: string;
+	text?: string;
+	requiredFlags?: string[];
+	requiredItems?: string[];
+	locked?: boolean;
+	lockReason?: string;
+}
+
+export function evaluateChoiceOptionGating(
+	option: ChoiceGatingOption,
+	currentStates?: WorldStates,
+): OptionGatingResult {
+	if (option.locked) {
+		return {
+			isLocked: true,
+			lockReason: option.lockReason ?? "Locked",
+		};
+	}
+
+	if (!currentStates) {
+		return { isLocked: false };
+	}
+
+	if (option.requiredFlags && option.requiredFlags.length > 0) {
+		for (const flag of option.requiredFlags) {
+			const directVal = currentStates[flag];
+			const flagsArr = currentStates["flags"];
+			const satisfied = directVal === true || (Array.isArray(flagsArr) && flagsArr.includes(flag));
+
+			if (!satisfied) {
+				return {
+					isLocked: true,
+					lockReason: `Requires flag: ${flag}`,
+				};
+			}
+		}
+	}
+
+	if (option.requiredItems && option.requiredItems.length > 0) {
+		for (const item of option.requiredItems) {
+			const directVal = currentStates[item];
+			const inv = currentStates["inventory"] ?? currentStates["items"] ?? currentStates["backpack"];
+			const satisfied = directVal === true
+				|| (typeof directVal === "number" && directVal > 0)
+				|| (Array.isArray(inv) && inv.includes(item));
+
+			if (!satisfied) {
+				return {
+					isLocked: true,
+					lockReason: `Requires item: ${item}`,
+				};
+			}
+		}
+	}
+
+	return { isLocked: false };
+}
+
 // Pure Evaluation Functions
 
 export function clampGaugeDelta(

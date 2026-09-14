@@ -128,6 +128,7 @@ function ChatMessage(props: Readonly<Props>) {
 				content={content}
 				onChoiceSelect={onChoiceSelect}
 				disabled={disabled}
+				currentStates={data.metadata?.stateSnapshot}
 			/>
 		);
 	}

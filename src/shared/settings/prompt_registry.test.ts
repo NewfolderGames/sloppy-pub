@@ -3,7 +3,30 @@ import assert from "node:assert/strict";
 import type { ChatCompletionMessageParam } from "../ai/llm/common.ts";
 import { deleteLoreBook, saveLoreBook } from "../lore/registry.ts";
 import type { LoreBook } from "../lore/types.ts";
-import { addPrompt, APP_PROMPT, assembleChatPromptMessages, clearPromptSettingsMemory, deletePrompt, formatSessionStatesPrompt, getPromptSettings, getPromptSettingsSnapshot, getSystemPromptItem, isSystemPromptId, reorderPrompt, resetPromptSettings, savePromptSettings, setPromptSettingsRawForTesting, subscribePromptSettings, SYSTEM_PROMPT_DEFINITIONS, SYSTEM_PROMPT_IDS, updatePrompt, updateSystemPrompt, updateSystemPromptRole } from "./prompt_registry.ts";
+import {
+	addPrompt,
+	APP_PROMPT,
+	assembleChatPromptMessages,
+	clearPromptSettingsMemory,
+	deletePrompt,
+	formatSemanticDirectivesPrompt,
+	formatSessionStatesPrompt,
+	getPromptSettings,
+	getPromptSettingsSnapshot,
+	getSystemPromptItem,
+	isSystemPromptId,
+	reorderPrompt,
+	resetPromptSettings,
+	savePromptSettings,
+	setPromptSettingsRawForTesting,
+	subscribePromptSettings,
+	SYSTEM_PROMPT_DEFINITIONS,
+	SYSTEM_PROMPT_IDS,
+	updatePrompt,
+	updateSystemPrompt,
+	updateSystemPromptRole,
+} from "./prompt_registry.ts";
+import { evaluateChoiceOptionGating } from "../world/semantic/validation_engine.ts";
 import type { PromptSettings, SystemPromptId } from "./types.ts";
 
 describe("Prompt Registry", () => {
@@ -62,6 +85,7 @@ describe("Prompt Registry", () => {
 			"system:chat_history",
 			"system:character_instances",
 			"system:world_states",
+			"system:semantic_directives",
 			"system:session_events",
 			"system:director_prompt",
 			"system:wizard_prompt",
@@ -78,6 +102,7 @@ describe("Prompt Registry", () => {
 			"system:chat_history": { enabled: true },
 			"system:character_instances": { enabled: true, role: "user" },
 			"system:world_states": { enabled: true, role: "user" },
+			"system:semantic_directives": { enabled: true, role: "system" },
 			"system:session_events": { enabled: true, role: "user" },
 			"system:director_prompt": { enabled: true, role: "user" },
 			"system:wizard_prompt": { enabled: true, role: "system" },
@@ -91,6 +116,7 @@ describe("Prompt Registry", () => {
 		assert.equal(isSystemPromptId("system:chapters_summary"), true);
 		assert.equal(isSystemPromptId("system:chat_history"), true);
 		assert.equal(isSystemPromptId("system:world_states"), true);
+		assert.equal(isSystemPromptId("system:semantic_directives"), true);
 		assert.equal(isSystemPromptId("system:character_instances"), true);
 		assert.equal(isSystemPromptId("system:lore_prompt"), true);
 		assert.equal(isSystemPromptId("system:session_events"), true);
@@ -117,6 +143,7 @@ describe("Prompt Registry", () => {
 				|| systemId === "system:lore_prompt"
 				|| systemId === "system:chapters_summary"
 				|| systemId === "system:wizard_prompt"
+				|| systemId === "system:semantic_directives"
 			) {
 				assert.equal(item.role, "system");
 			}
@@ -155,8 +182,8 @@ describe("Prompt Registry", () => {
 
 		const settings = getPromptSettings();
 
-		assert.equal(settings.order.length, 12);
-		assert.equal(settings.order[11], createdPrompt.id);
+		assert.equal(settings.order.length, 13);
+		assert.equal(settings.order[12], createdPrompt.id);
 		assert.deepEqual(settings.userPrompts[createdPrompt.id], createdPrompt);
 	});
 
@@ -287,6 +314,7 @@ describe("Prompt Registry", () => {
 			"system:chat_history",
 			"system:character_instances",
 			"system:world_states",
+			"system:semantic_directives",
 			"system:session_events",
 			"system:director_prompt",
 			"system:wizard_prompt",
@@ -354,6 +382,7 @@ describe("Prompt Registry", () => {
 			"system:chat_history",
 			"system:character_instances",
 			"system:world_states",
+			"system:semantic_directives",
 			"system:session_events",
 			"system:director_prompt",
 			"system:wizard_prompt",
@@ -407,6 +436,7 @@ describe("Prompt Registry", () => {
 			"system:chat_history",
 			"system:character_instances",
 			"system:world_states",
+			"system:semantic_directives",
 			"system:session_events",
 			"system:director_prompt",
 			"system:wizard_prompt",
@@ -430,6 +460,7 @@ describe("Prompt Registry", () => {
 			"system:chat_history",
 			"system:character_instances",
 			"system:world_states",
+			"system:semantic_directives",
 			"system:session_events",
 			"system:director_prompt",
 			prompt1.id,
@@ -453,6 +484,7 @@ describe("Prompt Registry", () => {
 			"system:chat_history",
 			"system:character_instances",
 			"system:world_states",
+			"system:semantic_directives",
 			"system:session_events",
 			"system:director_prompt",
 			prompt1.id,
@@ -460,8 +492,8 @@ describe("Prompt Registry", () => {
 			prompt2.id,
 		]);
 
-		// Move prompt1 to the top (10 moves to go from index 10 to index 0)
-		for (let i = 0; i < 10; i++) {
+		// Move prompt1 to the top (11 moves to go from index 11 to index 0)
+		for (let i = 0; i < 11; i++) {
 			reorderPrompt(prompt1.id, "up");
 		}
 
@@ -477,6 +509,7 @@ describe("Prompt Registry", () => {
 			"system:chat_history",
 			"system:character_instances",
 			"system:world_states",
+			"system:semantic_directives",
 			"system:session_events",
 			"system:director_prompt",
 			"system:wizard_prompt",
@@ -565,6 +598,7 @@ describe("Prompt Registry", () => {
 			"system:chat_history",
 			"system:character_instances",
 			"system:world_states",
+			"system:semantic_directives",
 			"system:session_events",
 			"system:director_prompt",
 			"system:wizard_prompt",
@@ -583,6 +617,7 @@ describe("Prompt Registry", () => {
 			"system:chat_history",
 			"system:character_instances",
 			"system:world_states",
+			"system:semantic_directives",
 			"system:session_events",
 			"system:director_prompt",
 			"system:wizard_prompt",
@@ -611,6 +646,7 @@ describe("Prompt Registry", () => {
 			"system:chat_history",
 			"system:character_instances",
 			"system:world_states",
+			"system:semantic_directives",
 			"system:session_events",
 			"system:director_prompt",
 			"system:wizard_prompt",
@@ -645,9 +681,11 @@ describe("Prompt Registry", () => {
 				"system:director_prompt": { enabled: true },
 				"system:chat_history": { enabled: true },
 				"system:world_states": { enabled: false },
+				"system:semantic_directives": { enabled: false },
 				"system:character_instances": { enabled: true },
 				"system:lore_prompt": { enabled: true, role: "user" },
 				"system:session_events": { enabled: true, role: "user" },
+				"system:wizard_prompt": { enabled: true, role: "system" },
 			},
 		});
 
@@ -667,6 +705,7 @@ describe("Prompt Registry", () => {
 			"system:chat_history",
 			"system:character_instances",
 			"system:world_states",
+			"system:semantic_directives",
 			"system:session_events",
 			"system:director_prompt",
 			"system:wizard_prompt",
@@ -744,6 +783,7 @@ describe("Prompt Registry", () => {
 			"b1",
 			"system:chat_history",
 			"system:world_states",
+			"system:semantic_directives",
 			"system:character_instances",
 			"system:lore_prompt",
 			"system:session_events",
@@ -863,9 +903,11 @@ describe("Prompt Registry", () => {
 					"system:director_prompt": { enabled: false },
 					"system:chat_history": { enabled: true },
 					"system:world_states": { enabled: true, role: "user" },
+					"system:semantic_directives": { enabled: false },
 					"system:character_instances": { enabled: false },
 					"system:lore_prompt": { enabled: true, role: "user" },
 					"system:session_events": { enabled: false },
+					"system:wizard_prompt": { enabled: false },
 				},
 			};
 
@@ -916,9 +958,11 @@ describe("Prompt Registry", () => {
 					"system:director_prompt": { enabled: false },
 					"system:chat_history": { enabled: true },
 					"system:world_states": { enabled: false },
+					"system:semantic_directives": { enabled: false },
 					"system:character_instances": { enabled: false },
 					"system:lore_prompt": { enabled: true, role: "user" },
 					"system:session_events": { enabled: false },
+					"system:wizard_prompt": { enabled: false },
 				},
 			};
 
@@ -961,9 +1005,11 @@ describe("Prompt Registry", () => {
 					"system:director_prompt": { enabled: false },
 					"system:chat_history": { enabled: true },
 					"system:world_states": { enabled: true },
+					"system:semantic_directives": { enabled: false },
 					"system:character_instances": { enabled: false },
 					"system:lore_prompt": { enabled: true, role: "user" },
 					"system:session_events": { enabled: false },
+					"system:wizard_prompt": { enabled: false },
 				},
 			};
 
@@ -1083,6 +1129,7 @@ describe("Prompt Registry", () => {
 					"system:world_states": { enabled: false },
 					"system:character_instances": { enabled: false },
 					"system:lore_prompt": { enabled: false },
+					"system:semantic_directives": { enabled: false },
 					"system:session_events": { enabled: true, role: "user" },
 					"system:wizard_prompt": { enabled: true, role: "system" },
 					"system:chapters_summary": { enabled: false },
@@ -1131,9 +1178,11 @@ describe("Prompt Registry", () => {
 					"system:director_prompt": { enabled: true, role: "system" },
 					"system:chat_history": { enabled: true },
 					"system:world_states": { enabled: false },
+					"system:semantic_directives": { enabled: false },
 					"system:character_instances": { enabled: false },
 					"system:lore_prompt": { enabled: false },
 					"system:session_events": { enabled: false },
+					"system:wizard_prompt": { enabled: false },
 				},
 			};
 
@@ -1186,7 +1235,9 @@ describe("Prompt Registry", () => {
 					"system:world_states": { enabled: false },
 					"system:character_instances": { enabled: false },
 					"system:lore_prompt": { enabled: true, role: "user" },
+					"system:semantic_directives": { enabled: false },
 					"system:session_events": { enabled: false },
+					"system:wizard_prompt": { enabled: false },
 				},
 			};
 
@@ -1238,9 +1289,11 @@ describe("Prompt Registry", () => {
 					"system:director_prompt": { enabled: false },
 					"system:chat_history": { enabled: true },
 					"system:world_states": { enabled: false },
+					"system:semantic_directives": { enabled: false },
 					"system:character_instances": { enabled: false },
 					"system:lore_prompt": { enabled: true, role: "user" },
 					"system:session_events": { enabled: false },
+					"system:wizard_prompt": { enabled: false },
 				},
 			};
 
@@ -1271,9 +1324,11 @@ describe("Prompt Registry", () => {
 					"system:director_prompt": { enabled: false },
 					"system:chat_history": { enabled: true },
 					"system:world_states": { enabled: false },
+					"system:semantic_directives": { enabled: false },
 					"system:character_instances": { enabled: false },
 					"system:lore_prompt": { enabled: true, role: "user" },
 					"system:session_events": { enabled: false },
+					"system:wizard_prompt": { enabled: false },
 				},
 			};
 
@@ -1309,9 +1364,11 @@ describe("Prompt Registry", () => {
 					"system:director_prompt": { enabled: false },
 					"system:chat_history": { enabled: true },
 					"system:world_states": { enabled: false },
+					"system:semantic_directives": { enabled: false },
 					"system:character_instances": { enabled: false },
 					"system:lore_prompt": { enabled: true, role: "user" },
 					"system:session_events": { enabled: false },
+					"system:wizard_prompt": { enabled: false },
 				},
 			};
 
@@ -1509,6 +1566,154 @@ describe("Prompt Registry", () => {
 			finally {
 				deleteLoreBook("lb_test_disabled");
 			}
+		});
+
+		it("formats semantic directives prompt block correctly", () => {
+			assert.equal(formatSemanticDirectivesPrompt(null), null);
+			assert.equal(formatSemanticDirectivesPrompt([]), null);
+
+			const formatted = formatSemanticDirectivesPrompt([
+				"The investigator perceives reality accurately and speaks calmly.",
+				"Review case files before entering the manor.",
+			]);
+
+			assert.ok(formatted);
+			assert.ok(formatted.includes("Active Behavioral Directives and Constraints:"));
+			assert.ok(formatted.includes("- The investigator perceives reality accurately and speaks calmly."));
+			assert.ok(formatted.includes("- Review case files before entering the manor."));
+		});
+
+		it("assembles semantic directives block into prompt messages", () => {
+			const sessionMessages: ChatCompletionMessageParam[] = [
+				{ role: "user", content: "What do we do now?" },
+			];
+			const directives = [
+				"Do not mention the occult directly.",
+			];
+
+			const assembled = assembleChatPromptMessages(
+				sessionMessages,
+				undefined,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				directives,
+			);
+
+			const directiveMsg = assembled.find(
+				m => typeof m.content === "string" && m.content.includes("Do not mention the occult directly."),
+			);
+			assert.ok(directiveMsg);
+			assert.equal(directiveMsg.role, "system");
+		});
+
+		it("automatically extracts semantic directives from blueprints and states during assembly", () => {
+			const sessionMessages: ChatCompletionMessageParam[] = [
+				{ role: "user", content: "Look around." },
+			];
+			const states = { sanity: 80, phase: "briefing" };
+			const blueprints = {
+				gauges: [
+					{
+						key: "sanity",
+						min: 0,
+						max: 100,
+						defaultValue: 100,
+						tiers: [
+							{
+								id: "lucid",
+								label: "Lucid",
+								min: 70,
+								max: 100,
+								directive: "Maintain logical reasoning.",
+							},
+						],
+					},
+				],
+				stateMachines: [
+					{
+						key: "phase",
+						initialState: "briefing",
+						states: {
+							briefing: { directive: "Prepare investigation kit." },
+						},
+						transitions: [],
+					},
+				],
+			};
+
+			const assembled = assembleChatPromptMessages(
+				sessionMessages,
+				undefined,
+				states,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				blueprints,
+			);
+
+			const directiveMsg = assembled.find(
+				m => typeof m.content === "string" && m.content.includes("Maintain logical reasoning."),
+			);
+			assert.ok(directiveMsg);
+			assert.ok((directiveMsg.content as string).includes("Prepare investigation kit."));
+		});
+
+		it("evaluates choice option gating with flags and items", () => {
+			// 1. Missing required flag
+			const optionWithFlag = {
+				id: "opt-1",
+				text: "Unlock the iron gate",
+				requiredFlags: ["found_key_flag"],
+			};
+			const gatingNoFlag = evaluateChoiceOptionGating(optionWithFlag, {});
+			assert.equal(gatingNoFlag.isLocked, true);
+			assert.equal(gatingNoFlag.lockReason, "Requires flag: found_key_flag");
+
+			// 2. Active required flag
+			const gatingWithFlag = evaluateChoiceOptionGating(optionWithFlag, { found_key_flag: true });
+			assert.equal(gatingWithFlag.isLocked, false);
+
+			// 3. Missing required item
+			const optionWithItem = {
+				id: "opt-2",
+				text: "Open the safe",
+				requiredItems: ["brass_key"],
+			};
+			const gatingNoItem = evaluateChoiceOptionGating(optionWithItem, { backpack: ["lantern"] });
+			assert.equal(gatingNoItem.isLocked, true);
+			assert.equal(gatingNoItem.lockReason, "Requires item: brass_key");
+
+			// 4. Active required item in inventory array
+			const gatingWithItem = evaluateChoiceOptionGating(optionWithItem, { backpack: ["brass_key"] });
+			assert.equal(gatingWithItem.isLocked, false);
+
+			// 5. Explicit locked option
+			const lockedOption = {
+				id: "opt-3",
+				text: "Secret ritual",
+				locked: true,
+				lockReason: "Requires ancient knowledge",
+			};
+			const gatingLocked = evaluateChoiceOptionGating(lockedOption, {});
+			assert.equal(gatingLocked.isLocked, true);
+			assert.equal(gatingLocked.lockReason, "Requires ancient knowledge");
 		});
 
 	});

@@ -201,6 +201,8 @@ export function WorldInfoDrawer({
 								searchQuery={searchQuery}
 								onSearchChange={handleSearchChange}
 								filteredStateEntries={filteredStateEntries}
+								blueprints={instance.blueprints}
+								displayStates={displayStates}
 							/>
 						</>
 					)}

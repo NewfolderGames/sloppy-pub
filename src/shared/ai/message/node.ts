@@ -8,6 +8,7 @@ export interface MessageMetadata {
 	tokens?: number;
 	durationMs?: number;
 	error?: string;
+	stateSnapshot?: WorldStates;
 }
 
 export interface Message {

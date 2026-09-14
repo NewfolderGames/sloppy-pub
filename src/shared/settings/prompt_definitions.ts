@@ -10,6 +10,7 @@ export const SYSTEM_PROMPT_IDS: readonly SystemPromptId[] = [
 	"system:chat_history",
 	"system:character_instances",
 	"system:world_states",
+	"system:semantic_directives",
 	"system:session_events",
 	"system:director_prompt",
 	"system:wizard_prompt",
@@ -24,6 +25,7 @@ export function isSystemPromptId(id: string): id is SystemPromptId {
 		|| id === "system:director_prompt"
 		|| id === "system:chat_history"
 		|| id === "system:world_states"
+		|| id === "system:semantic_directives"
 		|| id === "system:character_instances"
 		|| id === "system:lore_prompt"
 		|| id === "system:session_events"
@@ -63,6 +65,10 @@ export const SYSTEM_PROMPT_DEFINITIONS: Record<
 		name: "World States",
 		description: "Active world state and session state variables.",
 	},
+	"system:semantic_directives": {
+		name: "Semantic Directives",
+		description: "Active behavioral constraints and narrative directives from semantic blueprints.",
+	},
 	"system:character_instances": {
 		name: "Character Instances",
 		description: "Dynamic character thoughts, emotions, goals, and states.",
@@ -93,6 +99,7 @@ export const DEFAULT_PROMPT_SETTINGS: PromptSettings = {
 		"system:chat_history",
 		"system:character_instances",
 		"system:world_states",
+		"system:semantic_directives",
 		"system:session_events",
 		"system:director_prompt",
 		"system:wizard_prompt",
@@ -107,6 +114,7 @@ export const DEFAULT_PROMPT_SETTINGS: PromptSettings = {
 		"system:chat_history": { enabled: true },
 		"system:character_instances": { enabled: true, role: "user" },
 		"system:world_states": { enabled: true, role: "user" },
+		"system:semantic_directives": { enabled: true, role: "system" },
 		"system:session_events": { enabled: true, role: "user" },
 		"system:director_prompt": { enabled: true, role: "user" },
 		"system:wizard_prompt": { enabled: true, role: "system" },

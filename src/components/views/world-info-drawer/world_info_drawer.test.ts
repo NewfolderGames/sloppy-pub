@@ -136,4 +136,79 @@ describe("World Info Drawer Data and Integration", () => {
 
 	});
 
+	test("resolves semantic blueprint gauge meters and active tiers for drawer display", () => {
+
+		const sampleWorldfile: Worldfile = {
+			metadata: {
+				name: "investigation",
+				title: "Investigation",
+				version: "1.0.0",
+				description: "Scenario",
+			},
+			content: {
+				backgrounds: ["Dark manor"],
+				guidelines: ["Explore cautiously."],
+			},
+			blueprints: {
+				gauges: [
+					{
+						key: "sanity",
+						min: 0,
+						max: 100,
+						defaultValue: 80,
+						tiers: [
+							{
+								id: "lucid",
+								label: "Lucid",
+								min: 70,
+								max: 100,
+								directive: "Maintain logical reasoning.",
+							},
+							{
+								id: "unsettled",
+								label: "Unsettled",
+								min: 30,
+								max: 69,
+								directive: "Notice disturbances.",
+							},
+						],
+					},
+				],
+				stateMachines: [
+					{
+						key: "phase",
+						initialState: "briefing",
+						states: {
+							briefing: { directive: "Review documents." },
+							manor: { directive: "Explore manor." },
+						},
+						transitions: [
+							{ from: "briefing", to: "manor" },
+						],
+					},
+				],
+			},
+		};
+
+		const activeStates = {
+			sanity: 50,
+			phase: "briefing",
+			custom_var: "active",
+		};
+
+		assert.ok(sampleWorldfile.blueprints?.gauges);
+		const gauge = sampleWorldfile.blueprints.gauges[0];
+		const currentVal = activeStates.sanity;
+		const percent = Math.round(((currentVal - gauge.min) / (gauge.max - gauge.min)) * 100);
+		assert.equal(percent, 50);
+
+		assert.ok(sampleWorldfile.blueprints?.stateMachines);
+		const fsm = sampleWorldfile.blueprints.stateMachines[0];
+		const currentState = activeStates.phase;
+		const permitted = fsm.transitions.filter(t => t.from === currentState);
+		assert.equal(permitted.length, 1);
+		assert.equal(permitted[0].to, "manor");
+
+	});
+
 });

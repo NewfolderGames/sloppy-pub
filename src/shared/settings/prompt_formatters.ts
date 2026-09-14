@@ -28,6 +28,30 @@ export function formatSessionStatesPrompt(states?: WorldStates | null): string |
 
 }
 
+// Semantic Directives Prompt Formatting
+
+export function formatSemanticDirectivesPrompt(directives?: string[] | null): string | null {
+
+	if (!directives || directives.length === 0) {
+		return null;
+	}
+
+	const lines: string[] = ["Active Behavioral Directives and Constraints:"];
+
+	for (const directive of directives) {
+		if (directive.trim() !== "") {
+			lines.push(`- ${directive.trim()}`);
+		}
+	}
+
+	if (lines.length <= 1) {
+		return null;
+	}
+
+	return lines.join("\n");
+
+}
+
 // Session Events Prompt Formatting
 
 export function formatSessionEventsPrompt(events?: SessionEvent[] | null): string | null {

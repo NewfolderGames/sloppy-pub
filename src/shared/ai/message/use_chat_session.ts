@@ -76,6 +76,9 @@ export async function runChatStream(options: RunChatStreamOptions): Promise<void
 			session.instance.chapters,
 			session.instance.compacted ?? (session.instance as any).isCompacted,
 			session.director,
+			undefined,
+			session.stateStore.getActiveDirectiveStrings(),
+			session.stateStore.getBlueprints(),
 		);
 
 		const requestPayload: ChatCompletionRequest = {

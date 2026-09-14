@@ -421,21 +421,42 @@ function parseAttributes(attrString: string): Record<string, string> {
 function parseChoiceOptions(choiceContent: string): ChoiceOption[] {
 
 	const options: ChoiceOption[] = [];
-	const choiceTagRegex = /<choice\b[^>]*>([\s\S]*?)(?:<\/choice>|(?=<choice\b)|$)/gi;
+	const choiceTagRegex = /<choice\b([^>]*)>([\s\S]*?)(?:<\/choice>|(?=<choice\b)|$)/gi;
 
 	let match: RegExpExecArray | null;
 
 	while ((match = choiceTagRegex.exec(choiceContent)) !== null) {
 
-		const text = match[1].trim();
+		const attrString = match[1];
+		const text = match[2].trim();
 
 		if (text.length > 0) {
-
-			options.push({
+			const attrs = parseAttributes(attrString);
+			const option: ChoiceOption = {
 				id: `opt-${options.length + 1}`,
 				text,
-			});
+			};
 
+			const reqFlags = attrs.require_flags ?? attrs.require_flag ?? attrs.required_flags ?? attrs.required_flag;
+			if (reqFlags) {
+				option.requiredFlags = reqFlags.split(",").map(f => f.trim()).filter(Boolean);
+			}
+
+			const reqItems = attrs.require_items ?? attrs.require_item ?? attrs.required_items ?? attrs.required_item;
+			if (reqItems) {
+				option.requiredItems = reqItems.split(",").map(i => i.trim()).filter(Boolean);
+			}
+
+			if (attrs.locked === "true" || attrs.disabled === "true") {
+				option.locked = true;
+			}
+
+			const reason = attrs.reason ?? attrs.lock_reason;
+			if (reason) {
+				option.lockReason = reason;
+			}
+
+			options.push(option);
 		}
 
 	}

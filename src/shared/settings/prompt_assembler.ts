@@ -3,9 +3,15 @@ import { formatCharacterInstancesPrompt, formatCharacterPrompt } from "../charac
 import type { Characterfile, CharacterInstance } from "../character/types.ts";
 import { synthesizeLorePrompt } from "../lore/builder.ts";
 import { buildDirectorPrompt, type DirectorState } from "../session/director.ts";
-import type { Chapter, SessionEvent, WorldStates } from "../world/types.ts";
+import type { Chapter, SemanticBlueprints, SessionEvent, WorldStates } from "../world/types.ts";
+import { extractActiveDirectives } from "../world/semantic/validation_engine.ts";
 import { APP_PROMPT, isSystemPromptId } from "./prompt_definitions.ts";
-import { formatChaptersSummaryPrompt, formatSessionEventsPrompt, formatSessionStatesPrompt } from "./prompt_formatters.ts";
+import {
+	formatChaptersSummaryPrompt,
+	formatSemanticDirectivesPrompt,
+	formatSessionEventsPrompt,
+	formatSessionStatesPrompt,
+} from "./prompt_formatters.ts";
 import { getPromptSettings } from "./prompt_registry.ts";
 import type { PromptSettings } from "./types.ts";
 
@@ -25,6 +31,8 @@ export function assembleChatPromptMessages(
 	compacted?: boolean | null,
 	director?: DirectorState | string | null,
 	wizardPrompt?: string | null,
+	semanticDirectives?: string[] | null,
+	blueprints?: SemanticBlueprints | null,
 ): ChatCompletionMessageParam[] {
 
 	const currentSettings = settings ?? getPromptSettings();
@@ -145,6 +153,28 @@ export function assembleChatPromptMessages(
 					assembledMessages.push({
 						role,
 						content: formattedStates,
+					});
+				}
+
+				continue;
+			}
+
+			if (id === "system:semantic_directives") {
+				let directivesList = semanticDirectives;
+
+				if ((!directivesList || directivesList.length === 0) && blueprints && states) {
+					const extracted = extractActiveDirectives(blueprints, states);
+					directivesList = extracted.allDirectives;
+				}
+
+				const formattedDirectives = formatSemanticDirectivesPrompt(directivesList);
+
+				if (formattedDirectives) {
+					const role = currentSettings.systemPrompts[id]?.role ?? "system";
+
+					assembledMessages.push({
+						role,
+						content: formattedDirectives,
 					});
 				}
 

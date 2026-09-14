@@ -3,6 +3,7 @@ import type { ChatRole } from "@/shared/ai/llm/common.ts";
 import { type ReactNode, useMemo } from "react";
 import { parseRoleplayResponse } from "@/shared/ai/message/parser.ts";
 import type { AppBlock, MessageBlock } from "@/shared/ai/message/types.ts";
+import type { WorldStates } from "@/shared/world/types.ts";
 import rehypeRaw from "rehype-raw";
 import ChatMessageChoice from "./ChatMessageChoice.tsx";
 import styles from "./ChatMessageText.module.css";
@@ -12,6 +13,7 @@ interface ChatMessageTextProps {
 	content: string;
 	onChoiceSelect?: (selection: string) => void;
 	disabled?: boolean;
+	currentStates?: WorldStates;
 }
 
 function ChatMessageText(props: Readonly<ChatMessageTextProps>) {
@@ -79,6 +81,7 @@ function ChatMessageText(props: Readonly<ChatMessageTextProps>) {
 					data={block}
 					onChoiceSelect={props.onChoiceSelect}
 					disabled={props.disabled}
+					currentStates={props.currentStates}
 				/>
 			))}
 		</div>
@@ -89,6 +92,7 @@ interface BlockProps {
 	data: MessageBlock;
 	onChoiceSelect?: (selection: string) => void;
 	disabled?: boolean;
+	currentStates?: WorldStates;
 }
 
 function Block(props: Readonly<BlockProps>) {
@@ -142,6 +146,7 @@ function Block(props: Readonly<BlockProps>) {
 					data={props.data}
 					onSelect={props.onChoiceSelect}
 					disabled={props.disabled}
+					currentStates={props.currentStates}
 				/>
 			</div>
 		);

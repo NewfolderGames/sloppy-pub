@@ -6,6 +6,7 @@ export type SystemPromptId
 		| "system:director_prompt"
 		| "system:chat_history"
 		| "system:world_states"
+		| "system:semantic_directives"
 		| "system:character_instances"
 		| "system:lore_prompt"
 		| "system:session_events"

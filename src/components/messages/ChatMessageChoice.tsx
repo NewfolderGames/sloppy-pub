@@ -1,16 +1,21 @@
 import { type ChangeEvent, type SubmitEvent, useCallback, useState } from "react";
 import type { ChoiceBlock } from "@/shared/ai/message/types.ts";
+import type { WorldStates } from "@/shared/world/types.ts";
+import { evaluateChoiceOptionGating, type OptionGatingResult } from "@/shared/world/semantic/validation_engine.ts";
 import styles from "./ChatMessageChoice.module.css";
+
+export { evaluateChoiceOptionGating, type OptionGatingResult };
 
 interface ChatMessageChoiceProps {
 	data: ChoiceBlock;
 	onSelect?: (selection: string) => void;
 	disabled?: boolean;
+	currentStates?: WorldStates;
 }
 
 function ChatMessageChoice(props: Readonly<ChatMessageChoiceProps>) {
 
-	const { data, onSelect, disabled: externalDisabled } = props;
+	const { data, onSelect, disabled: externalDisabled, currentStates } = props;
 
 	const [selectedOptionIds, setSelectedOptionIds] = useState<Set<string>>(new Set());
 	const [customInputText, setCustomInputText] = useState("");
@@ -104,22 +109,31 @@ function ChatMessageChoice(props: Readonly<ChatMessageChoiceProps>) {
 			<div className={styles.container}>
 				<form onSubmit={handleMultiSubmit}>
 					<div className={styles.optionsList}>
-						{data.options.map(option => (
-							<label
-								key={option.id}
-								className={styles.checkboxItem}
-								data-disabled={isDisabled}
-							>
-								<input
-									type="checkbox"
-									className={styles.checkbox}
-									checked={selectedOptionIds.has(option.id)}
-									disabled={isDisabled}
-									onChange={() => handleCheckboxChange(option.id)}
-								/>
-								<span className={styles.checkboxLabel}>{option.text}</span>
-							</label>
-						))}
+						{data.options.map((option) => {
+							const gating = evaluateChoiceOptionGating(option, currentStates);
+							const isOptionDisabled = isDisabled || gating.isLocked;
+
+							return (
+								<label
+									key={option.id}
+									className={styles.checkboxItem}
+									data-disabled={isOptionDisabled}
+									title={gating.lockReason}
+								>
+									<input
+										type="checkbox"
+										className={styles.checkbox}
+										checked={selectedOptionIds.has(option.id)}
+										disabled={isOptionDisabled}
+										onChange={() => handleCheckboxChange(option.id)}
+									/>
+									<span className={styles.checkboxLabel}>{option.text}</span>
+									{gating.isLocked && gating.lockReason && (
+										<span className={styles.lockHint}>({gating.lockReason})</span>
+									)}
+								</label>
+							);
+						})}
 					</div>
 
 					{data.allowCustomInput && (
@@ -153,17 +167,26 @@ function ChatMessageChoice(props: Readonly<ChatMessageChoiceProps>) {
 	return (
 		<div className={styles.container}>
 			<div className={styles.optionsList}>
-				{data.options.map(option => (
-					<button
-						key={option.id}
-						type="button"
-						className={styles.optionButton}
-						disabled={isDisabled}
-						onClick={() => handleOptionClick(option.text)}
-					>
-						{option.text}
-					</button>
-				))}
+				{data.options.map((option) => {
+					const gating = evaluateChoiceOptionGating(option, currentStates);
+					const isOptionDisabled = isDisabled || gating.isLocked;
+
+					return (
+						<button
+							key={option.id}
+							type="button"
+							className={styles.optionButton}
+							disabled={isOptionDisabled}
+							title={gating.lockReason}
+							onClick={() => handleOptionClick(option.text)}
+						>
+							<span>{option.text}</span>
+							{gating.isLocked && gating.lockReason && (
+								<span className={styles.lockHint}>({gating.lockReason})</span>
+							)}
+						</button>
+					);
+				})}
 			</div>
 
 			{data.allowCustomInput && (

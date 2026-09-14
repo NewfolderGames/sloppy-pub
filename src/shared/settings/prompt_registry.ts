@@ -16,6 +16,7 @@ export {
 
 export {
 	formatChaptersSummaryPrompt,
+	formatSemanticDirectivesPrompt,
 	formatSessionEventsPrompt,
 	formatSessionStatesPrompt,
 } from "./prompt_formatters.ts";
@@ -125,6 +126,10 @@ function clonePromptSettings(settings: PromptSettings): PromptSettings {
 			enabled: settings.systemPrompts?.["system:world_states"]?.enabled ?? true,
 			role: settings.systemPrompts?.["system:world_states"]?.role ?? "user",
 		},
+		"system:semantic_directives": {
+			enabled: settings.systemPrompts?.["system:semantic_directives"]?.enabled ?? true,
+			role: settings.systemPrompts?.["system:semantic_directives"]?.role ?? "system",
+		},
 		"system:session_events": {
 			enabled: settings.systemPrompts?.["system:session_events"]?.enabled ?? true,
 			role: settings.systemPrompts?.["system:session_events"]?.role ?? "user",
@@ -183,6 +188,7 @@ function migrateLegacyPromptSettings(candidate: Record<string, unknown>): Prompt
 		"system:chat_history": { enabled: true },
 		"system:character_instances": { enabled: true, role: "user" },
 		"system:world_states": { enabled: true, role: "user" },
+		"system:semantic_directives": { enabled: true, role: "system" },
 		"system:session_events": { enabled: true, role: "user" },
 		"system:director_prompt": { enabled: true, role: "user" },
 		"system:wizard_prompt": { enabled: true, role: "system" },
@@ -263,6 +269,12 @@ function migrateLegacyPromptSettings(candidate: Record<string, unknown>): Prompt
 	if (!seen.has("system:world_states")) {
 		seen.add("system:world_states");
 		order.push("system:world_states");
+	}
+
+	// Semantic directives
+	if (!seen.has("system:semantic_directives")) {
+		seen.add("system:semantic_directives");
+		order.push("system:semantic_directives");
 	}
 
 	// Character instances
@@ -362,6 +374,7 @@ function sanitizePromptSettings(data: unknown): PromptSettings {
 	const rawDirectorPrompt = rawSystemPrompts["system:director_prompt"] as { enabled?: unknown; role?: unknown } | undefined;
 	const rawChatHistory = rawSystemPrompts["system:chat_history"] as { enabled?: unknown; role?: unknown } | undefined;
 	const rawWorldStates = rawSystemPrompts["system:world_states"] as { enabled?: unknown; role?: unknown } | undefined;
+	const rawSemanticDirectives = rawSystemPrompts["system:semantic_directives"] as { enabled?: unknown; role?: unknown } | undefined;
 	const rawCharacterInstances = rawSystemPrompts["system:character_instances"] as { enabled?: unknown; role?: unknown } | undefined;
 	const rawLorePrompt = rawSystemPrompts["system:lore_prompt"] as { enabled?: unknown; role?: unknown } | undefined;
 	const rawSessionEvents = rawSystemPrompts["system:session_events"] as { enabled?: unknown; role?: unknown } | undefined;
@@ -398,6 +411,10 @@ function sanitizePromptSettings(data: unknown): PromptSettings {
 		"system:world_states": {
 			enabled: typeof rawWorldStates?.enabled === "boolean" ? rawWorldStates.enabled : true,
 			role: parseRole(rawWorldStates?.role, "user"),
+		},
+		"system:semantic_directives": {
+			enabled: typeof rawSemanticDirectives?.enabled === "boolean" ? rawSemanticDirectives.enabled : true,
+			role: parseRole(rawSemanticDirectives?.role, "system"),
 		},
 		"system:session_events": {
 			enabled: typeof rawSessionEvents?.enabled === "boolean" ? rawSessionEvents.enabled : true,
